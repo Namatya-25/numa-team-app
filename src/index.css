@@ -1,0 +1,121 @@
+/* Layout: 携帯ゲーム機風の筐体。上に画面（フィールド/戦闘）、下に十字キーとA/B。ドット絵＋黒地白枠ウィンドウ。 */
+:root{
+  --bg:#0c111d;
+  --frame:#222b40;
+  --frame-2:#3a4663;
+  --ink:#ffffff;
+  --dim:#9aa3b8;
+  --shu:#e0482f;
+  --kin:#f2c14e;
+  --low:#ffa630;
+  --dead:#ff5a4a;
+  --f-dot:"DotGothic16","MS Gothic","Osaka-Mono",monospace;
+  --f-brush:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho",serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--ink)}
+body{
+  font-family:var(--f-dot);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px 32px;
+}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--kin);outline-offset:2px}
+
+.console{max-width:780px;margin:0 auto;display:grid;gap:14px}
+.screen{
+  position:relative;width:100%;background:#000;
+  border:6px solid var(--frame);border-radius:12px;
+  box-shadow:0 0 0 2px var(--frame-2),0 14px 40px rgba(0,0,0,.55);
+  overflow:hidden;container-type:inline-size;
+  font-size:clamp(11px,3.2cqw,19px);line-height:1.55;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;
+}
+.screen canvas.field{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+
+/* ウィンドウ */
+.win{position:absolute;background:#000;color:#fff;border:.2em solid #fff;border-radius:.5em;box-shadow:0 0 0 .16em #000;padding:.45em .8em}
+.win.static{position:relative}
+.opt{display:block;position:relative;padding-left:1.15em;white-space:nowrap;cursor:pointer;background:none;border:0;text-align:left;width:100%;line-height:1.55}
+.opt.sel::before{content:"▶";position:absolute;left:0;top:.1em;font-size:.8em;animation:blink .8s steps(1) infinite}
+.opt.dis{color:#6f6f6f}
+.more{position:absolute;right:.6em;bottom:.15em;font-size:.8em;animation:blink .8s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.dlg{left:3%;right:3%;bottom:3%;min-height:30%;cursor:pointer}
+.dlg p{margin:0;white-space:pre-wrap}
+.choice{right:3%;bottom:calc(3% + 30% + .6em)}
+.area{top:3%;left:3%;animation:fadeout 2.6s forwards}
+@keyframes fadeout{0%,75%{opacity:1}100%{opacity:0}}
+
+/* タイトル */
+.title{position:absolute;inset:0;background:rgba(0,0,0,.62);display:grid;align-content:center;justify-items:center;gap:4cqw;text-align:center;padding:4%}
+.logo{font-family:var(--f-brush);font-size:9cqw;line-height:1.1;text-shadow:0 .05em 0 #000,0 0 .3em rgba(0,0,0,.8)}
+.logo .ran{color:var(--shu);font-size:1.55em;display:inline-block;transform:rotate(-5deg)}
+.logo small{display:block;font-size:.5em;margin-top:.3em}
+.press{font-size:.85em;color:var(--dim)}
+
+/* メニュー */
+.menu-root{top:3%;left:3%;min-width:34%}
+.panel{inset:3%;overflow:auto}
+.panel h3{margin:0 0 .3em;font-weight:400;color:var(--kin)}
+.rows{display:grid;gap:.15em}
+.row{display:flex;justify-content:space-between;gap:1em}
+.row span:last-child{text-align:right}
+.mates{display:grid;grid-template-columns:repeat(auto-fill,minmax(11em,1fr));gap:0 1em}
+.hint{color:var(--kin);min-height:1.5em;margin:.4em 0 0}
+.mapbox{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1em;height:100%;align-items:start}
+.mapbox canvas{height:100%;max-height:100%;width:auto;max-width:60cqw;image-rendering:pixelated;display:block}
+.sw{display:inline-block;width:.7em;height:.7em;margin-right:.4em}
+.tbl{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:.1em 1em}
+.tbl .eff{color:var(--kin);text-align:right}
+
+/* 戦闘 */
+.bt{position:absolute;inset:0;display:flex;flex-direction:column;gap:2.2%;padding:2.5%;background:#000}
+.bt.shake{animation:shk .32s}
+@keyframes shk{20%{transform:translate(-1.2%,.6%)}40%{transform:translate(1%,-.6%)}60%{transform:translate(-.6%,.3%)}80%{transform:translate(.4%,0)}}
+.status{display:grid;gap:.5em}
+.st{padding:.2em .5em;font-size:.9em;line-height:1.35;min-width:0}
+.st .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st.low{color:var(--low);border-color:var(--low)}
+.st.dead{color:var(--dead);border-color:var(--dead)}
+.st.act{background:#1b2846}
+.scene{position:relative;flex:1;min-height:0;border-radius:.45em;overflow:hidden;display:flex;justify-content:center;align-items:flex-end;padding-bottom:4%}
+.scene::before,.scene::after{content:"";position:absolute;left:0;right:0;bottom:0}
+.scene.yama{background:linear-gradient(#5b86c6,#9cc2e8 58%,#3d6b33 58%)}
+.scene.yama::before{height:62%;background:#2f5a2a;clip-path:polygon(0 60%,14% 25%,28% 55%,46% 8%,62% 50%,78% 22%,100% 58%,100% 100%,0 100%);opacity:.75}
+.scene.umi{background:linear-gradient(#5c93d1,#a7cdef 50%,#2a5f9e 50%,#2a5f9e 72%,#d9c58a 72%)}
+.scene.machi{background:linear-gradient(#c96d4a,#f0b27a 58%,#6a5a48 58%)}
+.scene.machi::before{height:60%;background:#3a2f3f;opacity:.7;clip-path:polygon(0 100%,0 40%,8% 40%,8% 20%,16% 20%,16% 50%,24% 50%,24% 10%,30% 10%,30% 45%,40% 45%,40% 30%,50% 30%,50% 55%,58% 55%,58% 15%,66% 15%,66% 48%,76% 48%,76% 25%,84% 25%,84% 52%,92% 52%,92% 35%,100% 35%,100% 100%)}
+.foe{position:relative;z-index:1;transition:opacity .7s}
+.foe.blink{animation:fblink .42s steps(1)}
+@keyframes fblink{0%,50%{opacity:0}25%,75%,100%{opacity:1}}
+.foe.gone{opacity:0}
+.foe canvas{display:block;image-rendering:pixelated}
+.bottom{min-height:31%;display:flex;gap:.5em;align-items:stretch}
+.msg{flex:1;min-width:0}
+.msg p{margin:0}
+.cmdwrap{display:flex;gap:.5em;align-items:flex-start;width:100%}
+.who{flex:0 0 auto;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmds{flex:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 .8em}
+
+/* 操作パネル */
+.pad{display:flex;justify-content:space-between;align-items:center;gap:12px 16px;flex-wrap:wrap}
+.dpad{display:grid;grid-template-columns:repeat(3,54px);grid-template-rows:repeat(3,54px);gap:3px}
+.dpad button{background:var(--frame);border:0;border-radius:8px;color:var(--dim);font-size:18px;touch-action:none;cursor:pointer}
+.dpad button:active{background:var(--frame-2);color:#fff}
+.dpad .c{background:var(--frame);border-radius:0}
+.ab{display:flex;gap:14px;align-items:center}
+.ab button{border:0;border-radius:50%;font-size:20px;color:#fff;touch-action:none;cursor:pointer}
+.ab .a{width:66px;height:66px;background:var(--shu)}
+.ab .b{width:54px;height:54px;background:var(--frame-2);margin-top:28px}
+.ab button:active{filter:brightness(1.2)}
+.keys{font-size:12px;color:var(--dim);line-height:1.7;text-align:center;flex:1;min-width:150px}
+.hud{display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:space-between;color:var(--dim);font-size:14px}
+.hud b{color:#fff;font-weight:400}
+.note{font-size:12px;color:var(--dim);margin:0}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
