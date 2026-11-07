@@ -88,7 +88,7 @@ export default function App() {
         `ここは${p.name}の城。`,
         `地形データ：最高峰 ${p.peak.toLocaleString()}m・森林率 ${p.forest}%\n→ 防御×${m.def.toFixed(2)}　素早さ×${m.spd.toFixed(2)}`,
         `名物「${p.food}」の力（グルメ指数 ${p.foodIdx}）\n→ HP×${m.hp.toFixed(2)}　必殺×${m.sk.toFixed(2)}`,
-        `魅力度 ${REGIONS.length}地方中 ${p.rank}位。${p.rank <= 2 ? '人気地方の強敵だ！' : ''}（Lv+${m.lv}）`,
+        `魅力度 ${REGIONS.length}エリア中 ${p.rank}位。${p.rank <= 2 ? '人気エリアの強敵だ！' : ''}（Lv+${m.lv}）`,
         `${p.chara}（Lv${enemyLevel(p)}・${p.elem}属性）が待ち構えている。\n挑みますか？`,
       ],
       ['はい', 'いいえ'],
@@ -121,7 +121,7 @@ export default function App() {
       const here = ownAt(ns.pos.x, ns.pos.y);
       talk([`……${HERO}は目を覚ました。`, `${here >= 0 ? REGIONS[here].name : '城'}まで戻されたようだ。\n仲間と経験を積んで、また挑もう。`]);
     } else if (result === 'win' && reward.recruit && ns.cleared.length === REGIONS.length) {
-      talk([`ついに${REGIONS.length}つの地方の城をすべて制覇した！`, '日本列島縦断、達成！', '── おめでとう！ ──\nこれからも再戦で鍛えられる。']);
+      talk([`ついに${REGIONS.length}の城をすべて制覇した！`, '日本列島縦断、達成！', '── おめでとう！ ──\nこれからも再戦で鍛えられる。']);
     } else if (result === 'win' && reward.recruit && ns.cleared.length === 1) {
       talk(['仲間ができた！', 'メニューの「仲間」で連れていく仲間を選べる。\n相性も考えよう。']);
     }
@@ -146,7 +146,7 @@ export default function App() {
     talk([
       'ここは北海道。日本列島の北の果て。',
       '全国のご当地キャラたちが自分の土地を守るため、\n一斉に乱を起こした！',
-      `旅人${HERO}よ。${REGIONS.length}つの地方の城を制覇し、\n南の九州を目指すのだ！`,
+      `旅人${HERO}よ。本土の7地方と離島、${REGIONS.length}の城を制覇し、\n日本のすみずみまで旅するのだ！`,
       '矢印キーで移動。Zキーで調べる・メニュー。\n城にぶつかると話しかけられる。',
     ]);
   }
