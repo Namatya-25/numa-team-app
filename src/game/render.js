@@ -1,6 +1,7 @@
 // フィールドのタイルと主人公をドット絵で描く（1タイル = 16px）
 import { REGIONS } from '../data/prefectures.js';
 import { T, grid, own, inb, isSeaT, walkable, castleAt, castles } from './world.js';
+import { INSET_FRAMES } from '../data/japanMap.js';
 
 export const TILE = 16;
 export const SC = 3; // canvas の内部解像度の倍率
@@ -20,6 +21,7 @@ export function drawTile(ctx, mx, my, sx, sy, tick, cleared, nextId) {
     const ph = (tick + mx + my) % 2;
     r('#3b74b5', ph ? 2 : 9, 4, 4, 1);
     r('#3b74b5', ph ? 9 : 2, 11, 4, 1);
+    drawInsetFrame(r, mx, my);
     if (t === T.BRIDGE) {
       const hor = walkable(mx - 1, my) || walkable(mx + 1, my) || castleAt(mx - 1, my) >= 0 || castleAt(mx + 1, my) >= 0;
       if (hor) {
@@ -126,6 +128,22 @@ function drawCastle(ctx, x, y, flag) {
   // 旗
   r('#3b2a1a', 28, 0, 1, 10);
   r(flag, 23, 0, 5, 4);
+}
+
+// はめ込み図（沖縄・小笠原）のまわりに点線の枠を描く。枠は図の 1 マス外側のマスの真ん中を通る
+function drawInsetFrame(r, mx, my) {
+  const C = 'rgba(255,255,255,.45)';
+  for (const [fx, fy, fw, fh] of INSET_FRAMES) {
+    const x0 = fx - 1, y0 = fy - 1, x1 = fx + fw, y1 = fy + fh;
+    if ((mx === x0 || mx === x1) && my >= y0 && my <= y1) {
+      const a = my === y0 ? 8 : 0, b = my === y1 ? 9 : 16;
+      for (let i = a; i < b; i += 4) if (((i >> 2) & 1) === 0) r(C, 7, i, 2, Math.min(2, b - i));
+    }
+    if ((my === y0 || my === y1) && mx >= x0 && mx <= x1) {
+      const a = mx === x0 ? 8 : 0, b = mx === x1 ? 9 : 16;
+      for (let i = a; i < b; i += 4) if (((i >> 2) & 1) === 0) r(C, i, 7, Math.min(2, b - i), 2);
+    }
+  }
 }
 
 export function drawHero(ctx, x, y, dir, fr) {

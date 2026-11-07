@@ -1,10 +1,13 @@
 // セーブデータ（localStorage）と戦闘報酬の計算
 import { REGIONS, enemyLevel, need } from '../data/prefectures.js';
-import { START, walkable } from './world.js';
+import { START, walkable, castles } from './world.js';
 
 const KEY = 'gotochi-ran-rpg-v2'; // 47県版（v1）とは城の id が違うので別のキーにする
 
-export const fresh = () => ({ heroLv: 3, exp: 0, cleared: [], party: [], pos: { ...START }, dir: 'down' });
+// 地図を作り直したら数字を上げる。古い地図の位置は使えないので、最後に制覇した城の前から再開する
+const MAP_VERSION = 2;
+
+export const fresh = () => ({ heroLv: 3, exp: 0, cleared: [], party: [], pos: { ...START }, dir: 'down', mapVer: MAP_VERSION });
 
 export function hasSaved() {
   try {
@@ -19,7 +22,11 @@ export function loadSave() {
     const s = JSON.parse(localStorage.getItem(KEY));
     if (s && Array.isArray(s.cleared)) {
       const o = { ...fresh(), ...s };
-      if (!o.pos || !walkable(o.pos.x, o.pos.y)) o.pos = { ...START };
+      if (o.mapVer !== MAP_VERSION || !o.pos || !walkable(o.pos.x, o.pos.y)) {
+        const last = o.cleared.length ? Math.max(...o.cleared) : -1;
+        o.pos = { ...(last >= 0 && castles[last] ? castles[last].spawn : START) };
+        o.mapVer = MAP_VERSION;
+      }
       return o;
     }
   } catch {

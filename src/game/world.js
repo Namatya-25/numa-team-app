@@ -1,30 +1,12 @@
-// ドット絵の日本列島マップを自動生成（47県＋離島のタイル配置・エリアごとの城・道・橋）
-// 地形は県タイル単位で作り、マスの持ち主（own）はエリアの id にする
+// ドット絵の日本列島マップを作る（実際の地図データから作ったマス目 + エリアごとの城・道・橋）
+// 陸地の形と県の範囲は src/data/japanMap.js（scripts/build-map.mjs で生成）にある
 import { REGIONS, PREF_TILES } from '../data/prefectures.js';
+import { MAP_ROWS, MAP_CHARS, NODES } from '../data/japanMap.js';
 
-const S = 4; // 1県 = 4x4 タイル
-const M = 3; // 周囲の海の幅
-// 地図の広さは県タイルの配置から決める（北海道だけ 2x2 マス）
-const COLS = Math.max(...PREF_TILES.map((p, i) => p.x + (i === 0 ? 2 : 1)));
-const ROWS = Math.max(...PREF_TILES.map((p, i) => p.y + (i === 0 ? 2 : 1)));
-export const MW = COLS * S + M * 2;
-export const MH = ROWS * S + M * 2;
+export const MW = MAP_ROWS[0].length;
+export const MH = MAP_ROWS.length;
 
 export const T = { SEA: 0, GRASS: 1, FOREST: 2, MOUNT: 3, TOWN: 4, ROAD: 5, BRIDGE: 6, CASTLE: 7 };
-
-// 海峡を作るために削る辺（北海道・四国・九州・沖縄・離島を島にする）
-const TRIM = {
-  北海道: { b: 1 },
-  徳島: { t: 1, r: 1 },
-  香川: { t: 1 },
-  高知: { t: 1 },
-  福岡: { t: 1 },
-  熊本: { r: 1 },
-  沖縄: { l: 1, r: 1 },
-  西表島: { t: 1 },
-  小笠原諸島: { t: 1 },
-  北方領土: { l: 1 },
-};
 
 // 座標から決まる疑似乱数（毎回同じ地形になる）
 const rng = (x, y, s) => {
@@ -36,77 +18,120 @@ const rng = (x, y, s) => {
 export const grid = [...Array(MH)].map(() => Array(MW).fill(T.SEA));
 export const own = [...Array(MH)].map(() => Array(MW).fill(-1));
 export const castles = [];
-const boxes = []; // 県ごとの範囲と中心
 
 export const inb = (x, y) => x >= 0 && y >= 0 && x < MW && y < MH;
 export const isSeaT = (x, y) => !inb(x, y) || grid[y][x] === T.SEA || grid[y][x] === T.BRIDGE;
 
-// 1. 陸地と地形（地形の傾向は地方の属性で決まる）
-PREF_TILES.forEach((p, id) => {
-  const big = id === 0;
-  const tr = TRIM[p.name] || {};
-  const elem = REGIONS[p.region].elem;
-  const x0 = M + p.x * S + (tr.l || 0);
-  const y0 = M + p.y * S + (tr.t || 0);
-  const x1 = M + p.x * S + (big ? 8 : 4) - (tr.r || 0);
-  const y1 = M + p.y * S + (big ? 8 : 4) - (tr.b || 0);
-  for (let y = y0; y < y1; y++) {
-    for (let x = x0; x < x1; x++) {
-      own[y][x] = p.region;
-      const r = rng(x, y, 1);
-      if (elem === '山') grid[y][x] = r < 0.26 ? T.MOUNT : r < 0.48 ? T.FOREST : T.GRASS;
-      else if (elem === '街') grid[y][x] = r < 0.18 ? T.TOWN : r < 0.28 ? T.FOREST : T.GRASS;
-      else grid[y][x] = r < 0.24 ? T.FOREST : T.GRASS;
+export const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const STEPS = Object.values(DIRS);
+
+// 1. 陸地と地形。マスの持ち主（own）はエリアの id。地形の傾向はエリアの属性で決まり、海から遠いほど山が多い
+const pref = [...Array(MH)].map((_, y) => [...MAP_ROWS[y]].map((c) => (c === '.' ? -1 : MAP_CHARS.indexOf(c))));
+const coastDist = (x, y) => {
+  for (let d = 1; d <= 3; d++) {
+    for (let dy = -d; dy <= d; dy++) {
+      for (let dx = -d; dx <= d; dx++) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (!inb(nx, ny) || pref[ny][nx] < 0) return d;
+      }
     }
   }
-  boxes[id] = {
-    x: x0 + Math.floor((x1 - x0 - 1) / 2),
-    y: y0 + Math.floor((y1 - y0 - 1) / 2),
-    box: [x0, y0, x1, y1],
-  };
-});
-// 城は 2x2 マス。x, y は左上のマス
+  return 4;
+};
+for (let y = 0; y < MH; y++) {
+  for (let x = 0; x < MW; x++) {
+    const p = pref[y][x];
+    if (p < 0) continue;
+    const region = PREF_TILES[p].region;
+    const elem = REGIONS[region].elem;
+    const inland = (coastDist(x, y) - 1) * 0.08;
+    const r = rng(x, y, 1);
+    own[y][x] = region;
+    if (elem === '山') grid[y][x] = r < 0.14 + inland ? T.MOUNT : r < 0.4 + inland ? T.FOREST : T.GRASS;
+    else if (elem === '街') grid[y][x] = r < 0.18 ? T.TOWN : r < 0.24 + inland ? T.MOUNT : r < 0.34 + inland ? T.FOREST : T.GRASS;
+    else grid[y][x] = r < inland ? T.MOUNT : r < 0.24 + inland ? T.FOREST : T.GRASS;
+  }
+}
+
+// 2. 城は 2x2 マス。x, y は左上のマスで、城を置く県の県庁所在地あたり
 export const CASTLE_SIZE = 2;
 REGIONS.forEach((r) => {
-  const b = boxes[r.castlePref];
-  castles[r.id] = { x: b.x, y: b.y };
-});
-
-// 2. 海岸の角を削って自然な形にする
-boxes.forEach((c) => {
-  const [x0, y0, x1, y1] = c.box;
-  if (x1 - x0 <= 2) return;
-  [[x0, y0], [x1 - 1, y0], [x0, y1 - 1], [x1 - 1, y1 - 1]].forEach(([x, y], i) => {
-    const seaN = [[0, 1], [1, 0], [0, -1], [-1, 0]].filter(([dx, dy]) => isSeaT(x + dx, y + dy)).length;
-    if (seaN >= 2 && rng(x, y, i + 3) < 0.6) {
-      grid[y][x] = T.SEA;
-      own[y][x] = -1;
-    }
-  });
-});
-
-// 3. 城
-castles.forEach((c, id) => {
+  const [x, y] = NODES[r.castlePref];
+  castles[r.id] = { x, y };
   for (let dy = 0; dy < CASTLE_SIZE; dy++) {
     for (let dx = 0; dx < CASTLE_SIZE; dx++) {
-      grid[c.y + dy][c.x + dx] = T.CASTLE;
-      own[c.y + dy][c.x + dx] = id;
+      grid[y + dy][x + dx] = T.CASTLE;
+      own[y + dy][x + dx] = r.id;
     }
   }
 });
 
-// 4. 県の中心どうしを北から順に道でつなぐ（海の上は橋）。城のない県や島にも歩いて行ける
+// 3. 道：県庁所在地どうしを北から順に、なるべく陸の上を通ってつなぐ（海を渡るところは橋）
 const lay = (x, y) => {
   if (grid[y][x] === T.CASTLE) return;
   grid[y][x] = grid[y][x] === T.SEA || grid[y][x] === T.BRIDGE ? T.BRIDGE : T.ROAD;
 };
-for (let i = 0; i < boxes.length - 1; i++) {
-  const a = boxes[i];
-  const b = boxes[i + 1];
-  const sx = Math.sign(b.x - a.x);
-  for (let x = a.x; x !== b.x; x += sx) if (x !== a.x) lay(x, a.y);
-  const sy = Math.sign(b.y - a.y);
-  for (let y = a.y; y !== b.y; y += sy) if (!(b.x === a.x && y === a.y)) lay(b.x, y);
+const stepCost = (x, y) => {
+  const t = grid[y][x];
+  if (t === T.ROAD || t === T.BRIDGE) return 0.4; // できた道に合流しやすくする
+  if (t === T.CASTLE) return 30; // 城の中はなるべく通らない
+  if (t === T.SEA) return 8; // 橋はなるべく短く
+  return t === T.MOUNT ? 1.6 : 1;
+};
+// ダイクストラ法で a → b のいちばん安い道順を探す
+function route([ax, ay], [bx, by]) {
+  const dist = new Float64Array(MW * MH).fill(Infinity);
+  const prev = new Int32Array(MW * MH).fill(-1);
+  const heap = [[0, ay * MW + ax]];
+  dist[ay * MW + ax] = 0;
+  const goal = by * MW + bx;
+  while (heap.length) {
+    // 小さい順に取り出す（マスの数が少ないので、単純な二分ヒープで十分）
+    const [d, k] = heap[0];
+    const last = heap.pop();
+    if (heap.length) {
+      heap[0] = last;
+      for (let i = 0; ; ) {
+        const l = i * 2 + 1;
+        const r = l + 1;
+        let m = i;
+        if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+        if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+        if (m === i) break;
+        [heap[i], heap[m]] = [heap[m], heap[i]];
+        i = m;
+      }
+    }
+    if (d > dist[k]) continue;
+    if (k === goal) break;
+    const x = k % MW;
+    const y = (k / MW) | 0;
+    for (const [dx, dy] of STEPS) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (!inb(nx, ny)) continue;
+      const nk = ny * MW + nx;
+      const nd = d + (nk === goal ? 0 : stepCost(nx, ny));
+      if (nd < dist[nk]) {
+        dist[nk] = nd;
+        prev[nk] = k;
+        heap.push([nd, nk]);
+        for (let i = heap.length - 1; i > 0; ) {
+          const p = (i - 1) >> 1;
+          if (heap[p][0] <= heap[i][0]) break;
+          [heap[i], heap[p]] = [heap[p], heap[i]];
+          i = p;
+        }
+      }
+    }
+  }
+  const path = [];
+  for (let k = goal; k >= 0; k = prev[k]) path.push(k);
+  return path.reverse();
+}
+for (let i = 0; i < NODES.length - 1; i++) {
+  for (const k of route(NODES[i], NODES[i + 1])) lay(k % MW, (k / MW) | 0);
 }
 // 城のまわりを一周する道（海の上は橋）。2x2 の城が道をふさいでも、まわりを通って先へ進める
 castles.forEach((c) => {
@@ -121,8 +146,6 @@ export const walkable = (x, y) => inb(x, y) && grid[y][x] >= T.GRASS && grid[y][
 export const castleAt = (x, y) => (inb(x, y) && grid[y][x] === T.CASTLE ? own[y][x] : -1);
 export const ownAt = (x, y) => (inb(x, y) ? own[y][x] : -1);
 
-export const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
-
 // 城の前（復活地点）。下（正面）→ 左右 → 上の順に、城のまわりで歩けるマスを探す
 const AROUND = [[0, 2], [1, 2], [-1, 0], [-1, 1], [2, 0], [2, 1], [0, -1], [1, -1]];
 castles.forEach((c) => {
@@ -135,29 +158,3 @@ castles.forEach((c) => {
 });
 
 export const START = castles[0].spawn;
-
-// 5. スタート地点から歩いて行けない陸地（小さな島で角を削ったときに残るマスなど）は海にする
-{
-  const seen = new Set([START.y * MW + START.x]);
-  const queue = [START];
-  while (queue.length) {
-    const { x, y } = queue.pop();
-    for (const [dx, dy] of Object.values(DIRS)) {
-      const nx = x + dx;
-      const ny = y + dy;
-      const k = ny * MW + nx;
-      if (!seen.has(k) && walkable(nx, ny)) {
-        seen.add(k);
-        queue.push({ x: nx, y: ny });
-      }
-    }
-  }
-  for (let y = 0; y < MH; y++) {
-    for (let x = 0; x < MW; x++) {
-      if (walkable(x, y) && !seen.has(y * MW + x)) {
-        grid[y][x] = T.SEA;
-        own[y][x] = -1;
-      }
-    }
-  }
-}

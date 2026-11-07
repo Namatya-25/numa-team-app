@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel, stats, need } from '../data/prefectures.js';
 import { MW, MH, T, grid, own, castles, ownAt } from '../game/world.js';
+import { INSET_FRAMES } from '../data/japanMap.js';
 import { GRASS_COL } from '../game/render.js';
 import { nextOf } from '../game/save.js';
 import { useInput } from '../game/input.js';
@@ -23,6 +24,9 @@ function MiniMap({ save }) {
         c.fillRect(x * s, y * s, s, s);
       }
     }
+    c.strokeStyle = 'rgba(255,255,255,.6)';
+    c.lineWidth = 1;
+    INSET_FRAMES.forEach(([x, y, w, h]) => c.strokeRect((x - 1) * s + s / 2, (y - 1) * s + s / 2, (w + 1) * s, (h + 1) * s)); // はめ込み図の枠
     castles.forEach((k, i) => {
       c.fillStyle = save.cleared.includes(i) ? '#e0482f' : i === nid ? '#f2c14e' : '#ffffff';
       c.fillRect(k.x * s - 1, k.y * s - 1, s * 2 + 2, s * 2 + 2); // 城は 2x2 マス
