@@ -55,7 +55,8 @@ gotochi-ran/
 ├── index.html
 ├── package.json
 ├── vite.config.js
-├── .github/workflows/deploy.yml   # GitHub Pages への自動デプロイ
+├── scripts/
+│   └── build-map.mjs              # 都道府県の境界データからマス目の日本地図を作る
 └── src/
     ├── main.jsx                   # エントリーポイント
     ├── App.jsx                    # 画面切り替え（タイトル／フィールド／戦闘）と全体の状態
@@ -70,9 +71,10 @@ gotochi-ran/
     │   ├── PixelMascot.jsx        # ご当地キャラのドット絵
     │   └── Typer.jsx              # 1文字ずつ表示するテキスト
     ├── data/
-    │   └── prefectures.js         # 都道府県・離島データ、エリアの定義とステータス補正の計算式
+    │   ├── prefectures.js         # 都道府県・離島データ、エリアの定義とステータス補正の計算式
+    │   └── japanMap.js            # マス目の日本地図（build-map.mjs で自動生成）
     └── game/
-        ├── world.js               # 日本列島マップの自動生成（城・道・橋）
+        ├── world.js               # 日本地図から地形・城・道・橋を作る
         ├── render.js              # タイルと主人公のドット絵描画
         ├── battle.js              # 戦闘の初期化（味方と敵のステータス）
         ├── save.js                # セーブと報酬計算
@@ -90,13 +92,25 @@ gotochi-ran/
 `src/data/prefectures.js` の `RAW` 配列が全県のデータです。1行が1県で、並びは次のとおりです。
 
 ```
-[県名, 最高峰(m), 森林率(%), 名物, グルメ指数(0-100), 魅力度順位, キャラ名, 体色, 地図x, 地図y]
+[県名, 最高峰(m), 森林率(%), 名物, グルメ指数(0-100), 魅力度順位, キャラ名, 体色]
 ```
 
 エリアの分け方と城を置く県は、同じファイルの `REGION_DEF` で決めています。
 
 e-Stat（政府統計）や各自治体のオープンデータの値に置き換えると、そのままゲームバランスに反映されます。
 グルメ指数は生産量・消費量などを 0〜100 に正規化した値を想定しています。
+
+## 地図の作り直し
+
+フィールドの日本地図（`src/data/japanMap.js`）は、都道府県の境界データ（[dataofjapan/land](https://github.com/dataofjapan/land) の `japan.geojson`）から作っています。1マスは約20kmです。
+
+```bash
+node scripts/build-map.mjs <japan.geojson のパス>
+```
+
+- 沖縄本島・八重山（西表島など）・小笠原は、実際の位置だと地図が広くなりすぎるので、拡大して枠つきの「はめ込み図」として置いています。北方領土は実際の位置のままです。
+- 宮古島・大東諸島・奄美などの小さな島は省いています。佐渡島などの道のつながっていない島は、見えるだけで渡れません。
+- 縮尺やはめ込み図の位置は `scripts/build-map.mjs` の先頭で変えられます。作り直したら `src/game/save.js` の `MAP_VERSION` を上げてください（古いセーブの位置をリセットするため）。
 
 ## GitHub Pages で公開する
 
