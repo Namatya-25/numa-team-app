@@ -25,7 +25,7 @@ function MiniMap({ save }) {
     }
     castles.forEach((k, i) => {
       c.fillStyle = save.cleared.includes(i) ? '#e0482f' : i === nid ? '#f2c14e' : '#ffffff';
-      c.fillRect(k.x * s - 1, k.y * s - 1, s + 2, s + 2);
+      c.fillRect(k.x * s - 1, k.y * s - 1, s * 2 + 2, s * 2 + 2); // 城は 2x2 マス
     });
     c.fillStyle = '#000';
     c.fillRect(save.pos.x * s - 2, save.pos.y * s - 2, s + 4, s + 4);
