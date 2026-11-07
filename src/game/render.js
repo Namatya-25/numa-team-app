@@ -1,6 +1,6 @@
 // フィールドのタイルと主人公をドット絵で描く（1タイル = 16px）
 import { REGIONS } from '../data/prefectures.js';
-import { T, grid, own, inb, isSeaT, walkable, castleAt } from './world.js';
+import { T, grid, own, inb, isSeaT, walkable, castleAt, castles } from './world.js';
 
 export const TILE = 16;
 export const SC = 3; // canvas の内部解像度の倍率
@@ -77,19 +77,55 @@ export function drawTile(ctx, mx, my, sx, sy, tick, cleared, nextId) {
     r('#7da7d9', 10, 9, 2, 2);
   }
   if (t === T.CASTLE) {
-    r('#8e8e8e', 2, 11, 12, 5);
-    r('#a9a9a9', 3, 11, 10, 1);
-    r('#f2efe6', 4, 7, 8, 4);
-    r('#2d3a4f', 2, 6, 12, 2);
-    r('#f2efe6', 5, 4, 6, 2);
-    r('#2d3a4f', 4, 3, 8, 1);
-    r('#2d3a4f', 6, 1, 4, 2);
-    r('#3b2a1a', 7, 9, 2, 2);
+    // 城は 2x2 マスの大きな絵。このマスに当たる部分だけを切り抜いて描く
+    const c = castles[o];
     // 旗：制覇済み=赤、次の目的地=金色に点滅、未到達=灰色
     const col = cleared.includes(o) ? '#e0482f' : o === nextId ? (tick % 2 ? '#f2c14e' : '#ffffff') : '#7a7f8c';
-    r('#3b2a1a', 14, 0, 1, 8);
-    r(col, 10, 0, 4, 3);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(sx, sy, 16, 16);
+    ctx.clip();
+    drawCastle(ctx, sx - (mx - c.x) * 16, sy - (my - c.y) * 16, col);
+    ctx.restore();
   }
+}
+
+/** 32x32 の城（天守・石垣・旗） */
+function drawCastle(ctx, x, y, flag) {
+  const r = (c, a, b, w, h) => {
+    ctx.fillStyle = c;
+    ctx.fillRect(x + a, y + b, w, h);
+  };
+  const ROOF = '#2d3a4f';
+  const WALL = '#f2efe6';
+  // 石垣
+  r('#8e8e8e', 2, 22, 28, 10);
+  r('#a9a9a9', 3, 22, 26, 1);
+  for (let i = 0; i < 3; i++) r('#767676', 2, 25 + i * 3, 28, 1);
+  r('#3b2a1a', 13, 25, 6, 7); // 門
+  r('#5a4030', 15, 25, 2, 7);
+  // 1階
+  r(WALL, 6, 15, 20, 7);
+  r(ROOF, 9, 17, 2, 2);
+  r(ROOF, 15, 17, 2, 2);
+  r(ROOF, 21, 17, 2, 2);
+  r(ROOF, 3, 12, 26, 3);
+  r(ROOF, 1, 11, 2, 1);
+  r(ROOF, 29, 11, 2, 1);
+  // 2階
+  r(WALL, 10, 7, 12, 5);
+  r(ROOF, 12, 8, 2, 2);
+  r(ROOF, 18, 8, 2, 2);
+  r(ROOF, 8, 5, 16, 2);
+  r(ROOF, 6, 4, 2, 1);
+  r(ROOF, 24, 4, 2, 1);
+  // 最上階の屋根としゃちほこ
+  r(ROOF, 12, 2, 8, 3);
+  r('#d4a017', 11, 1, 2, 2);
+  r('#d4a017', 19, 1, 2, 2);
+  // 旗
+  r('#3b2a1a', 28, 0, 1, 10);
+  r(flag, 23, 0, 5, 4);
 }
 
 export function drawHero(ctx, x, y, dir, fr) {

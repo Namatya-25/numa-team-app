@@ -65,6 +65,8 @@ PREF_TILES.forEach((p, id) => {
     box: [x0, y0, x1, y1],
   };
 });
+// 城は 2x2 マス。x, y は左上のマス
+export const CASTLE_SIZE = 2;
 REGIONS.forEach((r) => {
   const b = boxes[r.castlePref];
   castles[r.id] = { x: b.x, y: b.y };
@@ -84,8 +86,13 @@ boxes.forEach((c) => {
 });
 
 // 3. 城
-castles.forEach((c) => {
-  grid[c.y][c.x] = T.CASTLE;
+castles.forEach((c, id) => {
+  for (let dy = 0; dy < CASTLE_SIZE; dy++) {
+    for (let dx = 0; dx < CASTLE_SIZE; dx++) {
+      grid[c.y + dy][c.x + dx] = T.CASTLE;
+      own[c.y + dy][c.x + dx] = id;
+    }
+  }
 });
 
 // 4. 県の中心どうしを北から順に道でつなぐ（海の上は橋）。城のない県や島にも歩いて行ける
@@ -101,6 +108,14 @@ for (let i = 0; i < boxes.length - 1; i++) {
   const sy = Math.sign(b.y - a.y);
   for (let y = a.y; y !== b.y; y += sy) if (!(b.x === a.x && y === a.y)) lay(b.x, y);
 }
+// 城のまわりを一周する道（海の上は橋）。2x2 の城が道をふさいでも、まわりを通って先へ進める
+castles.forEach((c) => {
+  for (let dy = -1; dy <= CASTLE_SIZE; dy++) {
+    for (let dx = -1; dx <= CASTLE_SIZE; dx++) {
+      if (inb(c.x + dx, c.y + dy)) lay(c.x + dx, c.y + dy);
+    }
+  }
+});
 
 export const walkable = (x, y) => inb(x, y) && grid[y][x] >= T.GRASS && grid[y][x] <= T.BRIDGE;
 export const castleAt = (x, y) => (inb(x, y) && grid[y][x] === T.CASTLE ? own[y][x] : -1);
@@ -108,9 +123,10 @@ export const ownAt = (x, y) => (inb(x, y) ? own[y][x] : -1);
 
 export const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 
-// 城の前（復活地点）
+// 城の前（復活地点）。下（正面）→ 左右 → 上の順に、城のまわりで歩けるマスを探す
+const AROUND = [[0, 2], [1, 2], [-1, 0], [-1, 1], [2, 0], [2, 1], [0, -1], [1, -1]];
 castles.forEach((c) => {
-  for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
+  for (const [dx, dy] of AROUND) {
     if (walkable(c.x + dx, c.y + dy)) {
       c.spawn = { x: c.x + dx, y: c.y + dy };
       break;
