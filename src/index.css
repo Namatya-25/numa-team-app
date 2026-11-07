@@ -10,7 +10,7 @@
   --low:#ffa630;
   --dead:#ff5a4a;
   --f-dot:"DotGothic16","MS Gothic","Osaka-Mono",monospace;
-  --f-brush:"Yuji Boku","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-pop:"Mochiy Pop One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -54,9 +54,13 @@ button{font:inherit;color:inherit}
 
 /* タイトル */
 .title{position:absolute;inset:0;background:rgba(0,0,0,.62);display:grid;align-content:center;justify-items:center;gap:4cqw;text-align:center;padding:4%}
-.logo{font-family:var(--f-brush);font-size:9cqw;line-height:1.1;text-shadow:0 .05em 0 #000,0 0 .3em rgba(0,0,0,.8)}
-.logo .ran{color:var(--shu);font-size:1.55em;display:inline-block;transform:rotate(-5deg)}
-.logo small{display:block;font-size:.5em;margin-top:.3em}
+/* タイトルロゴ：丸みのあるポップな字に、こげ茶のふちどり */
+.logo{font-family:var(--f-pop);font-size:8.5cqw;line-height:1.15;color:#fff;letter-spacing:.02em;
+  text-shadow:.04em .04em 0 #3a2a1a,-.04em .04em 0 #3a2a1a,.04em -.04em 0 #3a2a1a,-.04em -.04em 0 #3a2a1a,0 .1em 0 #3a2a1a,0 0 .35em rgba(0,0,0,.6)}
+.logo .ran{color:var(--shu);font-size:1.5em;display:inline-block;margin-left:.05em;transform:rotate(-8deg);animation:ran-pop 2.4s ease-in-out infinite}
+.logo small{display:block;font-size:.45em;margin-top:.45em;color:var(--kin)}
+@keyframes ran-pop{0%,100%{transform:rotate(-8deg) scale(1)}50%{transform:rotate(-4deg) scale(1.06)}}
+@media (prefers-reduced-motion:reduce){.logo .ran{animation:none}}
 .press{font-size:.85em;color:var(--dim)}
 
 /* メニュー */
