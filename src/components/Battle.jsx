@@ -128,7 +128,9 @@ export default function Battle({ foe, save, reward, onEnd }) {
     try {
       say(`${HERO}たちは逃げ出した！`, true);
       await sleep(800);
-      if (Math.random() < (foe.wild ? 0.7 : 0.35)) {
+      // 1回目は確率で成功、2回目は必ず逃げ切れる
+      b.fleeTries += 1;
+      if (b.fleeTries >= 2 || Math.random() < (foe.wild ? 0.7 : 0.35)) {
         say('うまく逃げ切れた！');
         await sleep(900);
         onEnd('flee');
