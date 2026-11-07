@@ -50,7 +50,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     rerender();
   }
 
-  const note = (e) => (e > 1 ? ' こうかは ばつぐんだ！' : e < 1 ? ' あまり きいていない…' : '');
+  const note = (e) => (e > 1 ? ' 効果は抜群だ！' : e < 1 ? ' あまり効いていない…' : '');
   const nextAlive = (i) => {
     for (let j = i + 1; j < allies.length; j++) if (allies[j].hp > 0) return j;
     return -1;
@@ -74,7 +74,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
 
   async function run() {
     try {
-      say(foe.wild ? `${enemy.name}が あらわれた！` : `${P.name}の しゅご、${enemy.name}が たちはだかる！`, true);
+      say(foe.wild ? `${enemy.name}が現れた！` : `${P.name}の守護、${enemy.name}が立ちはだかる！`, true);
       await sleep(1200);
       startInput();
     } catch {
@@ -94,11 +94,11 @@ export default function Battle({ foe, save, reward, onEnd }) {
     const u = allies[b.idx];
     if (!u) return [];
     return [
-      { k: 'atk', l: 'たたかう' },
-      { k: 'sk', l: 'ひっさつ', dis: u.cd > 0 },
-      { k: 'grd', l: 'ぼうぎょ' },
-      { k: 'bento', l: 'べんとう' + bentoLeft(), dis: bentoLeft() <= 0 },
-      { k: 'flee', l: 'にげる' },
+      { k: 'atk', l: '戦う' },
+      { k: 'sk', l: '必殺', dis: u.cd > 0 },
+      { k: 'grd', l: '防御' },
+      { k: 'bento', l: '弁当' + bentoLeft(), dis: bentoLeft() <= 0 },
+      { k: 'flee', l: '逃げる' },
     ];
   }
 
@@ -126,15 +126,15 @@ export default function Battle({ foe, save, reward, onEnd }) {
 
   async function doFlee() {
     try {
-      say(`${HERO}たちは にげだした！`, true);
+      say(`${HERO}たちは逃げ出した！`, true);
       await sleep(800);
       if (Math.random() < (foe.wild ? 0.7 : 0.35)) {
-        say('うまく にげきれた！');
+        say('うまく逃げ切れた！');
         await sleep(900);
         onEnd('flee');
         return;
       }
-      say('しかし まわりこまれてしまった！');
+      say('しかし回り込まれてしまった！');
       await sleep(900);
       await enemyTurn();
       if (await checkEnd()) return;
@@ -149,27 +149,27 @@ export default function Battle({ foe, save, reward, onEnd }) {
     if (plan === 'bento' && b.bento <= 0) plan = 'atk';
     if (plan === 'atk' || plan === 'sk') {
       const sk = plan === 'sk';
-      say(sk ? `${u.name}の ${u.skill}！` : `${u.name}の こうげき！`, true);
+      say(sk ? `${u.name}の${u.skill}！` : `${u.name}の攻撃！`, true);
       await sleep(450);
       const r = hit(u, enemy, sk ? 1.8 * u.sk : 1);
       if (sk) u.cd = 2;
       say(`${enemy.name}に ${r.d}の ダメージ！${note(r.e)}`);
       await sleep(850);
       if (enemy.hp <= 0) {
-        say(`${enemy.name}を やっつけた！`);
+        say(`${enemy.name}をやっつけた！`);
         await sleep(800);
       }
     } else if (plan === 'grd') {
-      say(`${u.name}は みを まもっている。`, true);
+      say(`${u.name}は身を守っている。`, true);
       await sleep(700);
     } else if (plan === 'bento') {
       const t = allies.filter((a) => a.hp > 0).sort((a, c) => a.hp / a.max - c.hp / c.max)[0];
       const h = Math.min(t.max - t.hp, Math.round(t.max * 0.45));
       t.hp += h;
       b.bento--;
-      say(`${u.name}は ご当地べんとうを ひろげた！`, true);
+      say(`${u.name}はご当地弁当を広げた！`, true);
       await sleep(450);
-      say(`${t.name}の HPが ${h} かいふくした！`);
+      say(`${t.name}のHPが${h}回復した！`);
       await sleep(850);
     }
   }
@@ -182,7 +182,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     if (u.cd === 0 && Math.random() < 0.5) {
       u.cd = 2;
       if (Math.random() < 0.5) {
-        say(`${u.name}の ${u.skillAll}！`, true);
+        say(`${u.name}の${u.skillAll}！`, true);
         await sleep(500);
         for (const t of alive) {
           const r = hit(u, t, 0.75 * u.sk);
@@ -199,7 +199,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
       }
     } else {
       const t = Math.random() < 0.4 ? [...alive].sort((a, c) => a.hp - c.hp)[0] : pick(alive);
-      say(`${u.name}の こうげき！`, true);
+      say(`${u.name}の攻撃！`, true);
       await sleep(450);
       const r = hit(u, t, 1);
       say(`${t.name}に ${r.d}の ダメージ！${note(r.e)}`);
@@ -207,7 +207,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     }
     for (const t of alive) {
       if (t.hp <= 0) {
-        say(`${t.name}は ちからつきた。`);
+        say(`${t.name}は力尽きた。`);
         await sleep(700);
       }
     }
@@ -246,12 +246,12 @@ export default function Battle({ foe, save, reward, onEnd }) {
   async function checkEnd() {
     if (enemy.hp <= 0) {
       b.phase = 'end';
-      say(`けいけんち ${reward.exp}ポイントを かくとく！`, true);
-      if (reward.up) say(`${HERO}の レベルが ${reward.lv}に あがった！`);
+      say(`経験値${reward.exp}ポイントを獲得！`, true);
+      if (reward.up) say(`${HERO}のレベルが${reward.lv}に上がった！`);
       await waitA();
       if (reward.recruit) {
-        say(`${P.name}の しろを せいはした！`, true);
-        say(`${P.chara}が なかまに くわわった！`);
+        say(`${P.name}の城を制覇した！`, true);
+        say(`${P.chara}が仲間に加わった！`);
         await waitA();
       }
       onEnd('win');
@@ -259,7 +259,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     }
     if (allies.every((a) => a.hp <= 0)) {
       b.phase = 'end';
-      say(`${HERO}たちは ぜんめつした……`, true);
+      say(`${HERO}たちは全滅した……`, true);
       await waitA();
       onEnd('lose');
       return true;

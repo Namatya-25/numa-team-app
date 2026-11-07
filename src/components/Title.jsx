@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { useInput } from '../game/input.js';
 
 export default function Title({ hasSave, onNew, onContinue }) {
-  const items = hasSave ? ['つづきから', 'はじめから'] : ['はじめから'];
+  const items = hasSave ? ['続きから', '最初から'] : ['最初から'];
   const [cur, setCur] = useState(0);
   const [confirm, setConfirm] = useState(false);
   const [confirmCur, setConfirmCur] = useState(1);
 
   function pick(j) {
-    if (items[j] === 'つづきから') onContinue();
+    if (items[j] === '続きから') onContinue();
     else if (hasSave) setConfirm(true);
     else onNew();
   }
@@ -34,7 +34,7 @@ export default function Title({ hasSave, onNew, onContinue }) {
       </div>
       {confirm ? (
         <div className="win static">
-          <div style={{ marginBottom: '.3em' }}>ぼうけんのしょを けして はじめますか？</div>
+          <div style={{ marginBottom: '.3em' }}>冒険の書を消して始めますか？</div>
           {['はい', 'いいえ'].map((t, j) => (
             <button key={t} className={'opt' + (confirmCur === j ? ' sel' : '')} onClick={() => (j === 0 ? onNew() : setConfirm(false))}>
               {t}
@@ -50,7 +50,7 @@ export default function Title({ hasSave, onNew, onContinue }) {
           ))}
         </div>
       )}
-      <div className="press">Zキー / Aボタン で けってい</div>
+      <div className="press">Zキー / Aボタンで決定</div>
     </div>
   );
 }
