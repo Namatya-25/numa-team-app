@@ -1,23 +1,29 @@
-// ドット絵の日本列島マップを自動生成（47県のタイル配置・7地方の城・道・橋）
-// 地形は県タイル単位で作り、マスの持ち主（own）は地方の id にする
+// ドット絵の日本列島マップを自動生成（47県＋離島のタイル配置・エリアごとの城・道・橋）
+// 地形は県タイル単位で作り、マスの持ち主（own）はエリアの id にする
 import { REGIONS, PREF_TILES } from '../data/prefectures.js';
 
 const S = 4; // 1県 = 4x4 タイル
 const M = 3; // 周囲の海の幅
-export const MW = 13 * S + M * 2;
-export const MH = 12 * S + M * 2;
+// 地図の広さは県タイルの配置から決める（北海道だけ 2x2 マス）
+const COLS = Math.max(...PREF_TILES.map((p, i) => p.x + (i === 0 ? 2 : 1)));
+const ROWS = Math.max(...PREF_TILES.map((p, i) => p.y + (i === 0 ? 2 : 1)));
+export const MW = COLS * S + M * 2;
+export const MH = ROWS * S + M * 2;
 
 export const T = { SEA: 0, GRASS: 1, FOREST: 2, MOUNT: 3, TOWN: 4, ROAD: 5, BRIDGE: 6, CASTLE: 7 };
 
-// 海峡を作るために削る辺（北海道・四国・九州・沖縄を島にする）
+// 海峡を作るために削る辺（北海道・四国・九州・沖縄・離島を島にする）
 const TRIM = {
-  0: { b: 1 },
-  35: { t: 1, r: 1 },
-  36: { t: 1 },
-  39: { t: 1 },
-  40: { t: 1 },
-  43: { r: 1 },
-  46: { l: 1, r: 1 },
+  北海道: { b: 1 },
+  徳島: { t: 1, r: 1 },
+  香川: { t: 1 },
+  高知: { t: 1 },
+  福岡: { t: 1 },
+  熊本: { r: 1 },
+  沖縄: { l: 1, r: 1 },
+  西表島: { t: 1 },
+  小笠原諸島: { t: 1 },
+  北方領土: { l: 1 },
 };
 
 // 座標から決まる疑似乱数（毎回同じ地形になる）
@@ -38,7 +44,7 @@ export const isSeaT = (x, y) => !inb(x, y) || grid[y][x] === T.SEA || grid[y][x]
 // 1. 陸地と地形（地形の傾向は地方の属性で決まる）
 PREF_TILES.forEach((p, id) => {
   const big = id === 0;
-  const tr = TRIM[id] || {};
+  const tr = TRIM[p.name] || {};
   const elem = REGIONS[p.region].elem;
   const x0 = M + p.x * S + (tr.l || 0);
   const y0 = M + p.y * S + (tr.t || 0);
@@ -113,3 +119,29 @@ castles.forEach((c) => {
 });
 
 export const START = castles[0].spawn;
+
+// 5. スタート地点から歩いて行けない陸地（小さな島で角を削ったときに残るマスなど）は海にする
+{
+  const seen = new Set([START.y * MW + START.x]);
+  const queue = [START];
+  while (queue.length) {
+    const { x, y } = queue.pop();
+    for (const [dx, dy] of Object.values(DIRS)) {
+      const nx = x + dx;
+      const ny = y + dy;
+      const k = ny * MW + nx;
+      if (!seen.has(k) && walkable(nx, ny)) {
+        seen.add(k);
+        queue.push({ x: nx, y: ny });
+      }
+    }
+  }
+  for (let y = 0; y < MH; y++) {
+    for (let x = 0; x < MW; x++) {
+      if (walkable(x, y) && !seen.has(y * MW + x)) {
+        grid[y][x] = T.SEA;
+        own[y][x] = -1;
+      }
+    }
+  }
+}

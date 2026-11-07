@@ -50,7 +50,7 @@ function DataView({ p }) {
         <span>森林率</span><span>{p.forest}%</span><span className="eff">素早さ×{m.spd.toFixed(2)}</span>
         <span>名物</span><span>{p.food}（{p.foodIdx}）</span><span className="eff">HP×{m.hp.toFixed(2)}</span>
         <span></span><span>{p.food}乱舞</span><span className="eff">必殺×{m.sk.toFixed(2)}</span>
-        <span>魅力度</span><span>{REGIONS.length}地方中 {p.rank}位</span><span className="eff">Lv+{m.lv}</span>
+        <span>魅力度</span><span>{REGIONS.length}エリア中 {p.rank}位</span><span className="eff">Lv+{m.lv}</span>
       </div>
       <p className="hint" style={{ color: '#fff' }}>山は街に、街は海に、海は山に強い（1.5倍）</p>
     </div>
@@ -148,7 +148,7 @@ export default function Menu({ save, setSave, onClose }) {
             ))}
           </div>
         ) : (
-          <p style={{ margin: 0 }}>まだ仲間がいない。城を制覇すると、その地方のキャラが仲間になる。</p>
+          <p style={{ margin: 0 }}>まだ仲間がいない。城を制覇すると、そのエリアのキャラが仲間になる。</p>
         )}
         <p className="hint">{hint}</p>
       </div>
