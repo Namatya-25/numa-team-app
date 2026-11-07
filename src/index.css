@@ -81,6 +81,9 @@ button{font:inherit;color:inherit}
 .status{display:grid;gap:.5em}
 .st{padding:.2em .5em;font-size:.9em;line-height:1.35;min-width:0}
 .st .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hpbar{height:.65em;overflow:hidden;border:.12em solid #fff;border-radius:0;background:#171717;box-shadow:0 0 0 .08em #000}
+.hpbar-fill{display:block;height:100%;background:var(--kin);transition:width .2s steps(8,end)}
+.hpbar.low .hpbar-fill{background:var(--dead)}
 .st.low{color:var(--low);border-color:var(--low)}
 .st.dead{color:var(--dead);border-color:var(--dead)}
 .st.act{background:#1b2846}
@@ -91,7 +94,8 @@ button{font:inherit;color:inherit}
 .scene.umi{background:linear-gradient(#5c93d1,#a7cdef 50%,#2a5f9e 50%,#2a5f9e 72%,#d9c58a 72%)}
 .scene.machi{background:linear-gradient(#c96d4a,#f0b27a 58%,#6a5a48 58%)}
 .scene.machi::before{height:60%;background:#3a2f3f;opacity:.7;clip-path:polygon(0 100%,0 40%,8% 40%,8% 20%,16% 20%,16% 50%,24% 50%,24% 10%,30% 10%,30% 45%,40% 45%,40% 30%,50% 30%,50% 55%,58% 55%,58% 15%,66% 15%,66% 48%,76% 48%,76% 25%,84% 25%,84% 52%,92% 52%,92% 35%,100% 35%,100% 100%)}
-.foe{position:relative;z-index:1;transition:opacity .7s}
+.foe{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:.3em;transition:opacity .7s}
+.enemy-hp{width:min(36cqw,18em)}
 .foe.blink{animation:fblink .42s steps(1)}
 @keyframes fblink{0%,50%{opacity:0}25%,75%,100%{opacity:1}}
 .foe.gone{opacity:0}

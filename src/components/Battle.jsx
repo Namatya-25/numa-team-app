@@ -320,6 +320,16 @@ export default function Battle({ foe, save, reward, onEnd }) {
           >
             <div className="n">{a.name}</div>
             <div>H {a.hp}</div>
+            <div
+              className={'hpbar' + (a.hp / a.max < 0.3 ? ' low' : '')}
+              role="progressbar"
+              aria-label={`${a.name} HP`}
+              aria-valuemin={0}
+              aria-valuemax={a.max}
+              aria-valuenow={a.hp}
+            >
+              <span className="hpbar-fill" style={{ width: `${(a.hp / a.max) * 100}%` }} />
+            </div>
             <div>Lv {a.lv}</div>
           </div>
         ))}
@@ -327,6 +337,16 @@ export default function Battle({ foe, save, reward, onEnd }) {
 
       <div className={'scene ' + ELEM[P.elem].cls}>
         <div key={'b' + b.blink} className={'foe' + (enemy.hp <= 0 ? ' gone' : b.blink ? ' blink' : '')}>
+          <div
+            className={'hpbar enemy-hp' + (enemy.hp / enemy.max < 0.3 ? ' low' : '')}
+            role="progressbar"
+            aria-label={`${enemy.name} HP`}
+            aria-valuemin={0}
+            aria-valuemax={enemy.max}
+            aria-valuenow={enemy.hp}
+          >
+            <span className="hpbar-fill" style={{ width: `${(enemy.hp / enemy.max) * 100}%` }} />
+          </div>
           <PixelMascot p={P} width={foe.wild ? '20cqw' : '30cqw'} />
         </div>
       </div>
