@@ -1,4 +1,5 @@
 // 画面の切り替え（タイトル／フィールド／戦闘）と全体の状態管理
+// ありがとう
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel } from './data/prefectures.js';
 import { castles, ownAt, DIRS, START } from './game/world.js';
