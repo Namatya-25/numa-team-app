@@ -109,6 +109,7 @@ button{font:inherit;color:inherit}
 @keyframes fblink{0%,50%{opacity:0}25%,75%,100%{opacity:1}}
 .foe.gone{opacity:0}
 .foe canvas{display:block;image-rendering:pixelated}
+.foe .enemy-mascot{display:block;height:auto;image-rendering:pixelated}
 /* 敵の絵が枠より大きいときは縮めて、上の HP バーが切れないようにする（縦横比はそのまま） */
 .foe canvas{flex:0 1 auto;min-height:0;max-height:100%;object-fit:contain;object-position:bottom}
 .foe .hpbar{flex:none}
