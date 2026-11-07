@@ -11,10 +11,10 @@ const makeUnit = (key, name, p, s, side, lv, skill, skillAll) => ({
 export function initBattle(foe, save) {
   const p = REGIONS[foe.pid];
   const L = save.heroLv;
-  const units = [makeUnit('hero', HERO, null, stats(L, null, 1.2), 'ally', L, 'じゅうだんぎり')];
+  const units = [makeUnit('hero', HERO, null, stats(L, null, 1.2), 'ally', L, '縦断斬り')];
   save.party.forEach((id) => {
     const q = REGIONS[id];
-    units.push(makeUnit('a' + id, q.chara, q, stats(L, q, 0.85), 'ally', L, q.food + 'らんぶ'));
+    units.push(makeUnit('a' + id, q.chara, q, stats(L, q, 0.85), 'ally', L, q.food + '乱舞'));
   });
 
   const n = units.length;
@@ -23,12 +23,12 @@ export function initBattle(foe, save) {
     const el = Math.max(1, enemyLevel(p) - 3);
     const s = stats(el, p, 0.75);
     s.hp = Math.round(s.hp * (1 + 0.4 * (n - 1)));
-    enemy = makeUnit('enemy', p.chara + 'のてした', p, s, 'enemy', el, p.food + 'らんぶ', p.food + 'のあらし');
+    enemy = makeUnit('enemy', p.chara + 'の手下', p, s, 'enemy', el, p.food + '乱舞', p.food + 'の嵐');
   } else {
     const el = enemyLevel(p);
     const s = stats(el, p, 1);
     s.hp = Math.round(s.hp * (1 + 0.6 * (n - 1))); // 仲間が多いほど敵のHPも増える
-    enemy = makeUnit('enemy', p.chara, p, s, 'enemy', el, p.food + 'らんぶ', p.food + 'のあらし');
+    enemy = makeUnit('enemy', p.chara, p, s, 'enemy', el, p.food + '乱舞', p.food + 'の嵐');
   }
   units.push(enemy);
 

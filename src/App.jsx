@@ -74,22 +74,22 @@ export default function App() {
     const p = REGIONS[id];
     const m = mods(p);
     if (id > nextId) {
-      talk([`${p.name}の しろだ。`, `ふしぎな ちからで とびらが ひらかない……\nさきに ${REGIONS[nextId].name}の しろを せいはしよう。`]);
+      talk([`${p.name}の城だ。`, `不思議な力で扉が開かない……\n先に${REGIONS[nextId].name}の城を制覇しよう。`]);
       return;
     }
     if (save.cleared.includes(id)) {
-      talk([`${p.name}の しろは せいはずみだ。`, `${p.chara}と てあわせ しますか？\n（けいけんち 0.6ばい）`], ['はい', 'いいえ'], (c) => {
+      talk([`${p.name}の城は制覇済みだ。`, `${p.chara}と手合わせしますか？\n（経験値 0.6倍）`], ['はい', 'いいえ'], (c) => {
         if (c === 0) startBattle({ pid: id, wild: false });
       });
       return;
     }
     talk(
       [
-        `ここは ${p.name}の しろ。`,
-        `ちけいデータ：さいこうほう ${p.peak.toLocaleString()}m・しんりんりつ ${p.forest}%\n→ ぼうぎょ×${m.def.toFixed(2)}　すばやさ×${m.spd.toFixed(2)}`,
-        `めいぶつ「${p.food}」の ちから（グルメしすう ${p.foodIdx}）\n→ HP×${m.hp.toFixed(2)}　ひっさつ×${m.sk.toFixed(2)}`,
-        `みりょくど ${REGIONS.length}ちほうちゅう ${p.rank}い。${p.rank <= 2 ? 'にんきちほうの きょうてきだ！' : ''}（Lv+${m.lv}）`,
-        `${p.chara}（Lv${enemyLevel(p)}・${p.elem}ぞくせい）が まちかまえている。\nいどみますか？`,
+        `ここは${p.name}の城。`,
+        `地形データ：最高峰 ${p.peak.toLocaleString()}m・森林率 ${p.forest}%\n→ 防御×${m.def.toFixed(2)}　素早さ×${m.spd.toFixed(2)}`,
+        `名物「${p.food}」の力（グルメ指数 ${p.foodIdx}）\n→ HP×${m.hp.toFixed(2)}　必殺×${m.sk.toFixed(2)}`,
+        `魅力度 ${REGIONS.length}地方中 ${p.rank}位。${p.rank <= 2 ? '人気地方の強敵だ！' : ''}（Lv+${m.lv}）`,
+        `${p.chara}（Lv${enemyLevel(p)}・${p.elem}属性）が待ち構えている。\n挑みますか？`,
       ],
       ['はい', 'いいえ'],
       (c) => {
@@ -119,11 +119,11 @@ export default function App() {
 
     if (result === 'lose') {
       const here = ownAt(ns.pos.x, ns.pos.y);
-      talk([`……${HERO}は めを さました。`, `${here >= 0 ? REGIONS[here].name : 'しろ'}まで もどされたようだ。\nなかまと けいけんを つんで また いどもう。`]);
+      talk([`……${HERO}は目を覚ました。`, `${here >= 0 ? REGIONS[here].name : '城'}まで戻されたようだ。\n仲間と経験を積んで、また挑もう。`]);
     } else if (result === 'win' && reward.recruit && ns.cleared.length === REGIONS.length) {
-      talk([`ついに ${REGIONS.length}つの ちほうの しろを すべて せいはした！`, 'にほんれっとう じゅうだん たっせい！', '── おめでとう！ ──\nこれからも さいせんで きたえられる。']);
+      talk([`ついに${REGIONS.length}つの地方の城をすべて制覇した！`, '日本列島縦断、達成！', '── おめでとう！ ──\nこれからも再戦で鍛えられる。']);
     } else if (result === 'win' && reward.recruit && ns.cleared.length === 1) {
-      talk(['なかまが できた！', 'メニューの「なかま」で つれていく なかまを えらべる。\nあいしょうも かんがえよう。']);
+      talk(['仲間ができた！', 'メニューの「仲間」で連れていく仲間を選べる。\n相性も考えよう。']);
     }
   }
 
@@ -144,10 +144,10 @@ export default function App() {
     lastArea.current = 0;
     setMode('field');
     talk([
-      'ここは ほっかいどう。にほんれっとうの きたの はて。',
-      'ぜんこくの ご当地キャラたちが じぶんの とちを まもるため\nいっせいに らんを おこした！',
-      `たびびと ${HERO}よ。${REGIONS.length}つの ちほうの しろを せいはし\nみなみの きゅうしゅうを めざすのだ！`,
-      'やじるしキーで いどう。Zキーで しらべる・メニュー。\nしろに ぶつかると はなしかけられる。',
+      'ここは北海道。日本列島の北の果て。',
+      '全国のご当地キャラたちが自分の土地を守るため、\n一斉に乱を起こした！',
+      `旅人${HERO}よ。${REGIONS.length}つの地方の城を制覇し、\n南の九州を目指すのだ！`,
+      '矢印キーで移動。Zキーで調べる・メニュー。\n城にぶつかると話しかけられる。',
     ]);
   }
 
@@ -181,10 +181,10 @@ export default function App() {
 
       <div className="hud">
         <span>
-          せいは <b>{save.cleared.length} / {REGIONS.length}</b>
+          制覇 <b>{save.cleared.length} / {REGIONS.length}</b>
         </span>
         <span>
-          つぎ <b>{nextId < REGIONS.length ? REGIONS[nextId].name + 'の しろ' : 'かんぜんせいは'}</b>
+          次 <b>{nextId < REGIONS.length ? REGIONS[nextId].name + 'の城' : '完全制覇'}</b>
         </span>
         <span>
           {HERO} <b>Lv{save.heroLv}</b>
@@ -194,7 +194,7 @@ export default function App() {
       <ControlPad />
 
       <p className="note">
-        地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。ぼうけんのしょ（セーブ）はこのブラウザに自動保存されます。
+        地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。冒険の書（セーブ）はこのブラウザに自動保存されます。
       </p>
     </div>
   );

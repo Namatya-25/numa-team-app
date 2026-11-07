@@ -38,11 +38,11 @@ export default function ControlPad() {
         <span />
       </div>
       <div className="keys">
-        いどう：やじるし / WASD
+        移動：矢印 / WASD
         <br />
-        けってい・しらべる：Z / Enter
+        決定・調べる：Z / Enter
         <br />
-        メニュー・もどる：X / Esc
+        メニュー・戻る：X / Esc
       </div>
       <div className="ab">
         <button className="b" aria-label="Bボタン" onPointerDown={(e) => { e.preventDefault(); dispatch('b'); }}>

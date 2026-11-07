@@ -6,7 +6,7 @@ import { GRASS_COL } from '../game/render.js';
 import { nextOf } from '../game/save.js';
 import { useInput } from '../game/input.js';
 
-const ROOT = ['つよさ', 'なかま', 'ちず', 'データ', 'とじる'];
+const ROOT = ['強さ', '仲間', '地図', 'データ', '閉じる'];
 
 function MiniMap({ save }) {
   const ref = useRef(null);
@@ -40,19 +40,19 @@ function DataView({ p }) {
   return (
     <div>
       <h3>
-        {p.name}の しろ　{p.chara}
+        {p.name}の城　{p.chara}
       </h3>
       <div style={{ marginBottom: '.4em' }}>
-        Lv{enemyLevel(p)}・{p.elem}ぞくせい{p.rank <= 2 ? '・きょうてき' : ''}
+        Lv{enemyLevel(p)}・{p.elem}属性{p.rank <= 2 ? '・強敵' : ''}
       </div>
       <div className="tbl">
-        <span>さいこうほう</span><span>{p.peak.toLocaleString()}m</span><span className="eff">ぼうぎょ×{m.def.toFixed(2)}</span>
-        <span>しんりんりつ</span><span>{p.forest}%</span><span className="eff">すばやさ×{m.spd.toFixed(2)}</span>
-        <span>めいぶつ</span><span>{p.food}（{p.foodIdx}）</span><span className="eff">HP×{m.hp.toFixed(2)}</span>
-        <span></span><span>{p.food}らんぶ</span><span className="eff">ひっさつ×{m.sk.toFixed(2)}</span>
-        <span>みりょくど</span><span>{REGIONS.length}ちほう {p.rank}い</span><span className="eff">Lv+{m.lv}</span>
+        <span>最高峰</span><span>{p.peak.toLocaleString()}m</span><span className="eff">防御×{m.def.toFixed(2)}</span>
+        <span>森林率</span><span>{p.forest}%</span><span className="eff">素早さ×{m.spd.toFixed(2)}</span>
+        <span>名物</span><span>{p.food}（{p.foodIdx}）</span><span className="eff">HP×{m.hp.toFixed(2)}</span>
+        <span></span><span>{p.food}乱舞</span><span className="eff">必殺×{m.sk.toFixed(2)}</span>
+        <span>魅力度</span><span>{REGIONS.length}地方中 {p.rank}位</span><span className="eff">Lv+{m.lv}</span>
       </div>
-      <p className="hint" style={{ color: '#fff' }}>山は街に、街は海に、海は山に つよい（1.5ばい）</p>
+      <p className="hint" style={{ color: '#fff' }}>山は街に、街は海に、海は山に強い（1.5倍）</p>
     </div>
   );
 }
@@ -69,7 +69,7 @@ export default function Menu({ save, setSave, onClose }) {
       setSave((s) => ({ ...s, party: s.party.filter((x) => x !== id) }));
       setHint('');
     } else if (save.party.length >= 2) {
-      setHint('つれていける なかまは 2にんまで。');
+      setHint('連れていける仲間は2人まで。');
     } else {
       setSave((s) => ({ ...s, party: [...s.party, id] }));
       setHint('');
@@ -77,7 +77,7 @@ export default function Menu({ save, setSave, onClose }) {
   }
 
   function open(j) {
-    if (ROOT[j] === 'とじる') onClose();
+    if (ROOT[j] === '閉じる') onClose();
     else {
       setView(ROOT[j]);
       setPartyCur(0);
@@ -91,7 +91,7 @@ export default function Menu({ save, setSave, onClose }) {
       else if (k === 'down') setCur((v) => (v + 1) % ROOT.length);
       else if (k === 'a') open(cur);
       else if (k === 'b') onClose();
-    } else if (view === 'なかま' && mates.length) {
+    } else if (view === '仲間' && mates.length) {
       if (k === 'up' || k === 'left') setPartyCur((v) => Math.max(0, v - 1));
       else if (k === 'down' || k === 'right') setPartyCur((v) => Math.min(mates.length - 1, v + 1));
       else if (k === 'a') toggle(mates[partyCur]);
@@ -104,7 +104,7 @@ export default function Menu({ save, setSave, onClose }) {
   const dataPref = REGIONS[here >= 0 ? here : Math.min(nid, REGIONS.length - 1)];
 
   let body = null;
-  if (view === 'つよさ') {
+  if (view === '強さ') {
     const list = [
       { n: HERO, s: stats(save.heroLv, null, 1.2), e: 'なし' },
       ...save.party.map((id) => ({ n: REGIONS[id].chara, s: stats(save.heroLv, REGIONS[id], 0.85), e: REGIONS[id].elem })),
@@ -112,25 +112,25 @@ export default function Menu({ save, setSave, onClose }) {
     body = (
       <div>
         <h3>
-          つよさ　Lv{save.heroLv}　つぎのレベルまで {need(save.heroLv) - save.exp}
+          強さ　Lv{save.heroLv}　次のレベルまで {need(save.heroLv) - save.exp}
         </h3>
         <div className="rows">
           {list.map((u) => (
             <div key={u.n} className="row">
               <span>{u.n}（{u.e}）</span>
-              <span>HP{u.s.hp} こう{u.s.atk} ぼう{u.s.def} はや{u.s.spd}</span>
+              <span>HP{u.s.hp} 攻{u.s.atk} 防{u.s.def} 速{u.s.spd}</span>
             </div>
           ))}
         </div>
         <p className="hint" style={{ color: '#fff' }}>
-          せいは {save.cleared.length}/{REGIONS.length}　なかまは しゅじんこうと おなじLvで たたかう。
+          制覇 {save.cleared.length}/{REGIONS.length}　仲間は主人公と同じLvで戦う。
         </p>
       </div>
     );
-  } else if (view === 'なかま') {
+  } else if (view === '仲間') {
     body = (
       <div>
-        <h3>なかま（★＝つれていく・2にんまで）</h3>
+        <h3>仲間（★＝連れていく・2人まで）</h3>
         {mates.length ? (
           <div className="mates">
             {mates.map((id, j) => (
@@ -148,20 +148,20 @@ export default function Menu({ save, setSave, onClose }) {
             ))}
           </div>
         ) : (
-          <p style={{ margin: 0 }}>まだ なかまが いない。しろを せいはすると その ちほうの キャラが なかまに なる。</p>
+          <p style={{ margin: 0 }}>まだ仲間がいない。城を制覇すると、その地方のキャラが仲間になる。</p>
         )}
         <p className="hint">{hint}</p>
       </div>
     );
-  } else if (view === 'ちず') {
+  } else if (view === '地図') {
     body = (
       <div className="mapbox">
         <MiniMap save={save} />
         <div className="rows">
-          <div><span className="sw" style={{ background: '#e0482f' }} />せいはずみ</div>
-          <div><span className="sw" style={{ background: '#f2c14e' }} />つぎの もくてきち</div>
-          <div><span className="sw" style={{ background: '#fff' }} />みとうたつ</div>
-          <div style={{ marginTop: '.5em' }}>つぎ：{nid < REGIONS.length ? REGIONS[nid].name : 'かんぜんせいは！'}</div>
+          <div><span className="sw" style={{ background: '#e0482f' }} />制覇済み</div>
+          <div><span className="sw" style={{ background: '#f2c14e' }} />次の目的地</div>
+          <div><span className="sw" style={{ background: '#fff' }} />未到達</div>
+          <div style={{ marginTop: '.5em' }}>次：{nid < REGIONS.length ? REGIONS[nid].name : '完全制覇！'}</div>
         </div>
       </div>
     );
@@ -188,7 +188,7 @@ export default function Menu({ save, setSave, onClose }) {
         </div>
       )}
       {view && (
-        <div className="win panel" onClick={() => view !== 'なかま' && setView(null)}>
+        <div className="win panel" onClick={() => view !== '仲間' && setView(null)}>
           {body}
         </div>
       )}
