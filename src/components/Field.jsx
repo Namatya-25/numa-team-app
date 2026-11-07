@@ -42,6 +42,7 @@ export default function Field({ save, vw, vh, onMove, onCastle, onEncounter, onM
       cb.current.onMove(s.x, s.y, s.dir);
       const tile = grid[s.y][s.x];
       const o = own[s.y][s.x];
+      if (!cb.current.onEncounter) return; // 開発者用ボタンで雑魚敵を「なし」にしたとき
       if (o < 0 || tile === T.ROAD || tile === T.BRIDGE) return; // 道と橋では敵が出ない
       const rate = tile === T.FOREST || tile === T.MOUNT ? 1 / 12 : 1 / 20;
       if (s.steps > 5 && Math.random() < rate) {
