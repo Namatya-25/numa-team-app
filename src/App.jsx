@@ -11,9 +11,13 @@ import Title from './components/Title.jsx';
 import Menu from './components/Menu.jsx';
 import Dialog from './components/Dialog.jsx';
 import ControlPad from './components/ControlPad.jsx';
+import DevPanel from './components/DevPanel.jsx';
 
 export default function App() {
   const [save, setSave] = useState(loadSave);
+  // 開発者用：雑魚敵を出すかどうかと、ワープしたときにフィールドを作り直すための番号
+  const [encounter, setEncounter] = useState(true);
+  const [warpN, setWarpN] = useState(0);
   const hadSave = useRef(hasSaved());
   const [mode, setMode] = useState('title'); // 'title' | 'field' | 'battle'
   const [dialog, setDialog] = useState(null);
@@ -157,13 +161,13 @@ export default function App() {
       <div className="screen" style={{ aspectRatio: `${vw} / ${vh}` }}>
         {mode !== 'battle' && (
           <Field
-            key={'f' + vw}
+            key={'f' + vw + '-' + warpN}
             save={save}
             vw={vw}
             vh={vh}
             onMove={onMove}
             onCastle={onCastle}
-            onEncounter={(pid) => startBattle({ pid, wild: true })}
+            onEncounter={encounter ? (pid) => startBattle({ pid, wild: true }) : null}
             onMenu={() => setMenu(true)}
           />
         )}
@@ -193,6 +197,17 @@ export default function App() {
       </div>
 
       <ControlPad />
+
+      {import.meta.env.DEV && (
+        <DevPanel
+          save={save}
+          setSave={setSave}
+          mode={mode}
+          encounter={encounter}
+          setEncounter={setEncounter}
+          onWarp={() => setWarpN((n) => n + 1)}
+        />
+      )}
 
       <p className="note">
         地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。冒険の書（セーブ）はこのブラウザに自動保存されます。
