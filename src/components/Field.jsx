@@ -43,8 +43,9 @@ export default function Field({ save, vw, vh, onMove, onCastle, onEncounter, onM
       const tile = grid[s.y][s.x];
       const o = own[s.y][s.x];
       if (o < 0 || tile === T.ROAD || tile === T.BRIDGE) return; // 道と橋では敵が出ない
-      const rate = tile === T.FOREST || tile === T.MOUNT ? 1 / 12 : 1 / 20;
-      if (s.steps > 5 && Math.random() < rate) {
+      // 1歩ごとの雑魚敵の出現率（森・山は出やすい）。戦闘のあと 8 歩は出ない
+      const rate = tile === T.FOREST || tile === T.MOUNT ? 1 / 25 : 1 / 40;
+      if (s.steps > 8 && Math.random() < rate) {
         s.steps = 0;
         s.lock = true;
         cb.current.onEncounter(o);
