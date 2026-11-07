@@ -100,6 +100,7 @@ button{font:inherit;color:inherit}
 @keyframes fblink{0%,50%{opacity:0}25%,75%,100%{opacity:1}}
 .foe.gone{opacity:0}
 .foe canvas{display:block;image-rendering:pixelated}
+.foe .enemy-mascot{display:block;height:auto;image-rendering:pixelated}
 .bottom{min-height:31%;display:flex;gap:.5em;align-items:stretch}
 .msg{flex:1;min-width:0}
 .msg p{margin:0}

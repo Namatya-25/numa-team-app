@@ -347,7 +347,16 @@ export default function Battle({ foe, save, reward, onEnd }) {
           >
             <span className="hpbar-fill" style={{ width: `${(enemy.hp / enemy.max) * 100}%` }} />
           </div>
-          <PixelMascot p={P} width={foe.wild ? '20cqw' : '30cqw'} />
+          {P.id === 0 && !foe.wild ? (
+            <img
+              className="enemy-mascot"
+              src="/hokkaido-bear-mascot.png"
+              alt={P.chara}
+              style={{ width: '60cqw' }}
+            />
+          ) : (
+            <PixelMascot p={P} width={foe.wild ? '20cqw' : '30cqw'} />
+          )}
         </div>
       </div>
 
