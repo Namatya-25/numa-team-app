@@ -1,7 +1,7 @@
 // コマンド選択式のターン制バトル
 // 流れ：全員のコマンドを選ぶ → 素早い順に行動 → 勝敗チェック → 次のターン
 import { useEffect, useRef, useState } from 'react';
-import { PREFS, ELEM, HERO, elemMult } from '../data/prefectures.js';
+import { REGIONS, ELEM, HERO, elemMult } from '../data/prefectures.js';
 import { initBattle } from '../game/battle.js';
 import { useInput, dispatch } from '../game/input.js';
 import PixelMascot from './PixelMascot.jsx';
@@ -19,7 +19,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
 
   const allies = b.units.filter((u) => u.side === 'ally');
   const enemy = b.enemy;
-  const P = PREFS[foe.pid];
+  const P = REGIONS[foe.pid];
 
   useEffect(() => {
     // StrictMode で2回実行されても、古い方の進行は止まるようにする

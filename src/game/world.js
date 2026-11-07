@@ -1,5 +1,6 @@
-// ドット絵の日本列島マップを自動生成（47県のタイル配置・城・道・橋）
-import { PREFS } from '../data/prefectures.js';
+// ドット絵の日本列島マップを自動生成（47県のタイル配置・7地方の城・道・橋）
+// 地形は県タイル単位で作り、マスの持ち主（own）は地方の id にする
+import { REGIONS, PREF_TILES } from '../data/prefectures.js';
 
 const S = 4; // 1県 = 4x4 タイル
 const M = 3; // 周囲の海の幅
@@ -29,36 +30,42 @@ const rng = (x, y, s) => {
 export const grid = [...Array(MH)].map(() => Array(MW).fill(T.SEA));
 export const own = [...Array(MH)].map(() => Array(MW).fill(-1));
 export const castles = [];
+const boxes = []; // 県ごとの範囲と中心
 
 export const inb = (x, y) => x >= 0 && y >= 0 && x < MW && y < MH;
 export const isSeaT = (x, y) => !inb(x, y) || grid[y][x] === T.SEA || grid[y][x] === T.BRIDGE;
 
-// 1. 陸地と地形
-PREFS.forEach((p) => {
-  const big = p.id === 0;
-  const tr = TRIM[p.id] || {};
+// 1. 陸地と地形（地形の傾向は地方の属性で決まる）
+PREF_TILES.forEach((p, id) => {
+  const big = id === 0;
+  const tr = TRIM[id] || {};
+  const elem = REGIONS[p.region].elem;
   const x0 = M + p.x * S + (tr.l || 0);
   const y0 = M + p.y * S + (tr.t || 0);
   const x1 = M + p.x * S + (big ? 8 : 4) - (tr.r || 0);
   const y1 = M + p.y * S + (big ? 8 : 4) - (tr.b || 0);
   for (let y = y0; y < y1; y++) {
     for (let x = x0; x < x1; x++) {
-      own[y][x] = p.id;
+      own[y][x] = p.region;
       const r = rng(x, y, 1);
-      if (p.elem === '山') grid[y][x] = r < 0.26 ? T.MOUNT : r < 0.48 ? T.FOREST : T.GRASS;
-      else if (p.elem === '街') grid[y][x] = r < 0.18 ? T.TOWN : r < 0.28 ? T.FOREST : T.GRASS;
+      if (elem === '山') grid[y][x] = r < 0.26 ? T.MOUNT : r < 0.48 ? T.FOREST : T.GRASS;
+      else if (elem === '街') grid[y][x] = r < 0.18 ? T.TOWN : r < 0.28 ? T.FOREST : T.GRASS;
       else grid[y][x] = r < 0.24 ? T.FOREST : T.GRASS;
     }
   }
-  castles[p.id] = {
+  boxes[id] = {
     x: x0 + Math.floor((x1 - x0 - 1) / 2),
     y: y0 + Math.floor((y1 - y0 - 1) / 2),
     box: [x0, y0, x1, y1],
   };
 });
+REGIONS.forEach((r) => {
+  const b = boxes[r.castlePref];
+  castles[r.id] = { x: b.x, y: b.y };
+});
 
 // 2. 海岸の角を削って自然な形にする
-castles.forEach((c) => {
+boxes.forEach((c) => {
   const [x0, y0, x1, y1] = c.box;
   if (x1 - x0 <= 2) return;
   [[x0, y0], [x1 - 1, y0], [x0, y1 - 1], [x1 - 1, y1 - 1]].forEach(([x, y], i) => {
@@ -75,14 +82,14 @@ castles.forEach((c) => {
   grid[c.y][c.x] = T.CASTLE;
 });
 
-// 4. 城と城を道でつなぐ（海の上は橋）
+// 4. 県の中心どうしを北から順に道でつなぐ（海の上は橋）。城のない県や島にも歩いて行ける
 const lay = (x, y) => {
   if (grid[y][x] === T.CASTLE) return;
   grid[y][x] = grid[y][x] === T.SEA || grid[y][x] === T.BRIDGE ? T.BRIDGE : T.ROAD;
 };
-for (let i = 0; i < castles.length - 1; i++) {
-  const a = castles[i];
-  const b = castles[i + 1];
+for (let i = 0; i < boxes.length - 1; i++) {
+  const a = boxes[i];
+  const b = boxes[i + 1];
   const sx = Math.sign(b.x - a.x);
   for (let x = a.x; x !== b.x; x += sx) if (x !== a.x) lay(x, a.y);
   const sy = Math.sign(b.y - a.y);

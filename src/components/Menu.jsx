@@ -1,6 +1,6 @@
 // フィールドのメニュー（つよさ・なかま・ちず・データ）
 import { useEffect, useRef, useState } from 'react';
-import { PREFS, HERO, mods, enemyLevel, stats, need } from '../data/prefectures.js';
+import { REGIONS, HERO, mods, enemyLevel, stats, need } from '../data/prefectures.js';
 import { MW, MH, T, grid, own, castles, ownAt } from '../game/world.js';
 import { GRASS_COL } from '../game/render.js';
 import { nextOf } from '../game/save.js';
@@ -19,7 +19,7 @@ function MiniMap({ save }) {
         const t = grid[y][x];
         const o = own[y][x];
         c.fillStyle =
-          t === T.SEA ? '#1c3f73' : t === T.BRIDGE ? '#8b5a2b' : t === T.ROAD ? '#c9a86b' : o >= 0 ? GRASS_COL[PREFS[o].elem] : '#5fa84a';
+          t === T.SEA ? '#1c3f73' : t === T.BRIDGE ? '#8b5a2b' : t === T.ROAD ? '#c9a86b' : o >= 0 ? GRASS_COL[REGIONS[o].elem] : '#5fa84a';
         c.fillRect(x * s, y * s, s, s);
       }
     }
@@ -43,14 +43,14 @@ function DataView({ p }) {
         {p.name}の しろ　{p.chara}
       </h3>
       <div style={{ marginBottom: '.4em' }}>
-        Lv{enemyLevel(p)}・{p.elem}ぞくせい{p.rank <= 10 ? '・きょうてき' : ''}
+        Lv{enemyLevel(p)}・{p.elem}ぞくせい{p.rank <= 2 ? '・きょうてき' : ''}
       </div>
       <div className="tbl">
         <span>さいこうほう</span><span>{p.peak.toLocaleString()}m</span><span className="eff">ぼうぎょ×{m.def.toFixed(2)}</span>
         <span>しんりんりつ</span><span>{p.forest}%</span><span className="eff">すばやさ×{m.spd.toFixed(2)}</span>
         <span>めいぶつ</span><span>{p.food}（{p.foodIdx}）</span><span className="eff">HP×{m.hp.toFixed(2)}</span>
         <span></span><span>{p.food}らんぶ</span><span className="eff">ひっさつ×{m.sk.toFixed(2)}</span>
-        <span>みりょくど</span><span>ぜんこく{p.rank}い</span><span className="eff">Lv+{m.lv}</span>
+        <span>みりょくど</span><span>{REGIONS.length}ちほう {p.rank}い</span><span className="eff">Lv+{m.lv}</span>
       </div>
       <p className="hint" style={{ color: '#fff' }}>山は街に、街は海に、海は山に つよい（1.5ばい）</p>
     </div>
@@ -101,13 +101,13 @@ export default function Menu({ save, setSave, onClose }) {
 
   const here = ownAt(save.pos.x, save.pos.y);
   const nid = nextOf(save);
-  const dataPref = PREFS[here >= 0 ? here : Math.min(nid, PREFS.length - 1)];
+  const dataPref = REGIONS[here >= 0 ? here : Math.min(nid, REGIONS.length - 1)];
 
   let body = null;
   if (view === 'つよさ') {
     const list = [
       { n: HERO, s: stats(save.heroLv, null, 1.2), e: 'なし' },
-      ...save.party.map((id) => ({ n: PREFS[id].chara, s: stats(save.heroLv, PREFS[id], 0.85), e: PREFS[id].elem })),
+      ...save.party.map((id) => ({ n: REGIONS[id].chara, s: stats(save.heroLv, REGIONS[id], 0.85), e: REGIONS[id].elem })),
     ];
     body = (
       <div>
@@ -123,7 +123,7 @@ export default function Menu({ save, setSave, onClose }) {
           ))}
         </div>
         <p className="hint" style={{ color: '#fff' }}>
-          せいは {save.cleared.length}/47　なかまは しゅじんこうと おなじLvで たたかう。
+          せいは {save.cleared.length}/{REGIONS.length}　なかまは しゅじんこうと おなじLvで たたかう。
         </p>
       </div>
     );
@@ -143,12 +143,12 @@ export default function Menu({ save, setSave, onClose }) {
                 }}
               >
                 {save.party.includes(id) ? '★' : '　'}
-                {PREFS[id].chara}（{PREFS[id].elem}）
+                {REGIONS[id].chara}（{REGIONS[id].elem}）
               </button>
             ))}
           </div>
         ) : (
-          <p style={{ margin: 0 }}>まだ なかまが いない。しろを せいはすると その けんの キャラが なかまに なる。</p>
+          <p style={{ margin: 0 }}>まだ なかまが いない。しろを せいはすると その ちほうの キャラが なかまに なる。</p>
         )}
         <p className="hint">{hint}</p>
       </div>
@@ -161,7 +161,7 @@ export default function Menu({ save, setSave, onClose }) {
           <div><span className="sw" style={{ background: '#e0482f' }} />せいはずみ</div>
           <div><span className="sw" style={{ background: '#f2c14e' }} />つぎの もくてきち</div>
           <div><span className="sw" style={{ background: '#fff' }} />みとうたつ</div>
-          <div style={{ marginTop: '.5em' }}>つぎ：{nid < PREFS.length ? PREFS[nid].name : 'かんぜんせいは！'}</div>
+          <div style={{ marginTop: '.5em' }}>つぎ：{nid < REGIONS.length ? REGIONS[nid].name : 'かんぜんせいは！'}</div>
         </div>
       </div>
     );

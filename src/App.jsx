@@ -1,6 +1,6 @@
 // 画面の切り替え（タイトル／フィールド／戦闘）と全体の状態管理
 import { useEffect, useRef, useState } from 'react';
-import { PREFS, HERO, mods, enemyLevel } from './data/prefectures.js';
+import { REGIONS, HERO, mods, enemyLevel } from './data/prefectures.js';
 import { castles, ownAt, DIRS, START } from './game/world.js';
 import { fresh, hasSaved, loadSave, persist, nextOf, rewardFor } from './game/save.js';
 import { KEYMAP, dispatch, held, press, release } from './game/input.js';
@@ -71,10 +71,10 @@ export default function App() {
 
   // 城に話しかけたとき：地域データを読み上げてからボス戦
   function onCastle(id) {
-    const p = PREFS[id];
+    const p = REGIONS[id];
     const m = mods(p);
     if (id > nextId) {
-      talk([`${p.name}の しろだ。`, `ふしぎな ちからで とびらが ひらかない……\nさきに ${PREFS[nextId].name}の しろを せいはしよう。`]);
+      talk([`${p.name}の しろだ。`, `ふしぎな ちからで とびらが ひらかない……\nさきに ${REGIONS[nextId].name}の しろを せいはしよう。`]);
       return;
     }
     if (save.cleared.includes(id)) {
@@ -88,7 +88,7 @@ export default function App() {
         `ここは ${p.name}の しろ。`,
         `ちけいデータ：さいこうほう ${p.peak.toLocaleString()}m・しんりんりつ ${p.forest}%\n→ ぼうぎょ×${m.def.toFixed(2)}　すばやさ×${m.spd.toFixed(2)}`,
         `めいぶつ「${p.food}」の ちから（グルメしすう ${p.foodIdx}）\n→ HP×${m.hp.toFixed(2)}　ひっさつ×${m.sk.toFixed(2)}`,
-        `みりょくど ぜんこく${p.rank}い。${p.rank <= 10 ? 'にんきけんの きょうてきだ！' : ''}（Lv+${m.lv}）`,
+        `みりょくど ${REGIONS.length}ちほうちゅう ${p.rank}い。${p.rank <= 2 ? 'にんきちほうの きょうてきだ！' : ''}（Lv+${m.lv}）`,
         `${p.chara}（Lv${enemyLevel(p)}・${p.elem}ぞくせい）が まちかまえている。\nいどみますか？`,
       ],
       ['はい', 'いいえ'],
@@ -119,9 +119,9 @@ export default function App() {
 
     if (result === 'lose') {
       const here = ownAt(ns.pos.x, ns.pos.y);
-      talk([`……${HERO}は めを さました。`, `${here >= 0 ? PREFS[here].name : 'しろ'}まで もどされたようだ。\nなかまと けいけんを つんで また いどもう。`]);
-    } else if (result === 'win' && reward.recruit && ns.cleared.length === PREFS.length) {
-      talk(['ついに 47の しろを すべて せいはした！', 'にほんれっとう じゅうだん たっせい！', '── おめでとう！ ──\nこれからも さいせんで きたえられる。']);
+      talk([`……${HERO}は めを さました。`, `${here >= 0 ? REGIONS[here].name : 'しろ'}まで もどされたようだ。\nなかまと けいけんを つんで また いどもう。`]);
+    } else if (result === 'win' && reward.recruit && ns.cleared.length === REGIONS.length) {
+      talk([`ついに ${REGIONS.length}つの ちほうの しろを すべて せいはした！`, 'にほんれっとう じゅうだん たっせい！', '── おめでとう！ ──\nこれからも さいせんで きたえられる。']);
     } else if (result === 'win' && reward.recruit && ns.cleared.length === 1) {
       talk(['なかまが できた！', 'メニューの「なかま」で つれていく なかまを えらべる。\nあいしょうも かんがえよう。']);
     }
@@ -132,7 +132,7 @@ export default function App() {
     const o = ownAt(x, y);
     if (o >= 0 && o !== lastArea.current) {
       lastArea.current = o;
-      setArea({ name: PREFS[o].name, n: Date.now() });
+      setArea({ name: REGIONS[o].name, n: Date.now() });
     }
   }
 
@@ -146,7 +146,7 @@ export default function App() {
     talk([
       'ここは ほっかいどう。にほんれっとうの きたの はて。',
       'ぜんこくの ご当地キャラたちが じぶんの とちを まもるため\nいっせいに らんを おこした！',
-      `たびびと ${HERO}よ。47の しろを せいはし\nみなみの おきなわを めざすのだ！`,
+      `たびびと ${HERO}よ。${REGIONS.length}つの ちほうの しろを せいはし\nみなみの きゅうしゅうを めざすのだ！`,
       'やじるしキーで いどう。Zキーで しらべる・メニュー。\nしろに ぶつかると はなしかけられる。',
     ]);
   }
@@ -181,10 +181,10 @@ export default function App() {
 
       <div className="hud">
         <span>
-          せいは <b>{save.cleared.length} / 47</b>
+          せいは <b>{save.cleared.length} / {REGIONS.length}</b>
         </span>
         <span>
-          つぎ <b>{nextId < PREFS.length ? PREFS[nextId].name + 'の しろ' : 'かんぜんせいは'}</b>
+          つぎ <b>{nextId < REGIONS.length ? REGIONS[nextId].name + 'の しろ' : 'かんぜんせいは'}</b>
         </span>
         <span>
           {HERO} <b>Lv{save.heroLv}</b>

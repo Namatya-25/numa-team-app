@@ -1,5 +1,5 @@
 // フィールドのタイルと主人公をドット絵で描く（1タイル = 16px）
-import { PREFS } from '../data/prefectures.js';
+import { REGIONS } from '../data/prefectures.js';
 import { T, grid, own, inb, isSeaT, walkable, castleAt } from './world.js';
 
 export const TILE = 16;
@@ -39,7 +39,7 @@ export function drawTile(ctx, mx, my, sx, sy, tick, cleared, nextId) {
 
   // 地面（県の属性で色が変わる）＋砂浜
   const o = own[my][mx];
-  const p = o >= 0 ? PREFS[o] : null;
+  const p = o >= 0 ? REGIONS[o] : null;
   r(t === T.ROAD ? '#c9a86b' : p ? GRASS_COL[p.elem] : '#5fa84a', 0, 0, 16, 16);
   if (isSeaT(mx, my - 1)) r('#e3cf8c', 0, 0, 16, 2);
   if (isSeaT(mx, my + 1)) r('#e3cf8c', 0, 14, 16, 2);

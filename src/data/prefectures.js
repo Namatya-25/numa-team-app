@@ -1,4 +1,4 @@
-// 都道府県データと、データからステータス補正を計算する式
+// 都道府県データ → 7地方のステージデータと、データからステータス補正を計算する式
 
 /*
  * 地域データ（参考値のサンプル）
@@ -55,12 +55,59 @@ const RAW = [
   ['沖縄', 526, 46, 'ゴーヤー', 88, 3, 'ゴーヤー戦士', '#4f9d5a', 0, 11],
 ];
 
+/*
+ * 7地方区分。並び順がそのまま攻略順になる。
+ * [地方名, 最初の県, 最後の県（RAW の並びで連続）, 城を置く県]
+ * 名物・キャラ・体色は城を置く県のものを使う。
+ */
+const REGION_DEF = [
+  ['北海道', '北海道', '北海道', '北海道'],
+  ['東北', '青森', '福島', '宮城'],
+  ['関東', '茨城', '神奈川', '東京'],
+  ['中部', '新潟', '愛知', '愛知'],
+  ['近畿', '三重', '和歌山', '大阪'],
+  ['中国・四国', '鳥取', '高知', '広島'],
+  ['九州', '福岡', '沖縄', '福岡'],
+];
+
+const prefIdx = (name) => RAW.findIndex((r) => r[0] === name);
+
+/** 地図用の県タイル：{ name, x, y, region } */
+export const PREF_TILES = RAW.map((r) => ({ name: r[0], x: r[8], y: r[9], region: -1 }));
+
 /** 属性：森林率50%未満→街、最高峰2,000m以上→山、それ以外→海 */
-export const PREFS = RAW.map((r, i) => {
-  const [name, peak, forest, food, foodIdx, rank, chara, color, x, y] = r;
-  const elem = forest < 50 ? '街' : peak >= 2000 ? '山' : '海';
-  return { id: i, name, peak, forest, food, foodIdx, rank, chara, color, x, y, elem };
+const elemOf = (forest, peak) => (forest < 50 ? '街' : peak >= 2000 ? '山' : '海');
+
+// 地方のデータ＝所属する県のデータを集計（最高峰は最大、森林率は平均、魅力度は県の順位の平均で並べ直す）
+const regions = REGION_DEF.map(([name, first, last, castle], i) => {
+  const members = [];
+  for (let k = prefIdx(first); k <= prefIdx(last); k++) {
+    members.push(RAW[k]);
+    PREF_TILES[k].region = i;
+  }
+  const rep = RAW[prefIdx(castle)];
+  const peak = Math.max(...members.map((r) => r[1]));
+  const forest = Math.round(members.reduce((a, r) => a + r[2], 0) / members.length);
+  const avgRank = members.reduce((a, r) => a + r[5], 0) / members.length;
+  return {
+    id: i,
+    name: name + '地方',
+    peak,
+    forest,
+    food: rep[3],
+    foodIdx: rep[4],
+    avgRank,
+    chara: rep[6],
+    color: rep[7],
+    castlePref: prefIdx(castle),
+    elem: elemOf(forest, peak),
+  };
 });
+const byRank = [...regions].sort((a, b) => a.avgRank - b.avgRank);
+regions.forEach((r) => (r.rank = byRank.indexOf(r) + 1));
+
+/** ステージ（＝地方）。id は攻略順 */
+export const REGIONS = regions;
 
 /** 三すくみ：山は街に、街は海に、海は山に強い */
 export const ELEM = {
@@ -79,13 +126,14 @@ export function mods(p) {
     spd: 1 + (p.forest - 30) / 100, // 森林率（地形の険しさ）で素早さUP
     hp: 1 + p.foodIdx / 250, // グルメ指数でHP UP
     sk: 1 + p.foodIdx / 200, // グルメ指数で必殺技の威力UP
-    lv: Math.round(((48 - p.rank) / 47) * 2), // 魅力度上位ほどレベル上乗せ
+    lv: Math.round(((REGIONS.length + 1 - p.rank) / REGIONS.length) * 2), // 魅力度上位ほどレベル上乗せ
   };
 }
 
-export const enemyLevel = (p) => Math.round(1 + p.id * 0.85) + mods(p).lv;
+// 地方ごとに Lv が 4 ずつ上がる（城の数が少ないぶん、1ステージの上がり幅を大きくしている）
+export const enemyLevel = (p) => Math.round(1 + p.id * 4) + mods(p).lv;
 
-/** レベルと県データからステータスを計算（p が null なら主人公） */
+/** レベルと地方データからステータスを計算（p が null なら主人公） */
 export function stats(L, p, scale) {
   const m = p ? mods(p) : { def: 1, spd: 1, hp: 1, sk: 1.3 };
   return {

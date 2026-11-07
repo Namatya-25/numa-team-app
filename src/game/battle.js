@@ -1,5 +1,5 @@
 // 戦闘の初期化（味方と敵のステータスを作る）
-import { PREFS, HERO, enemyLevel, stats } from '../data/prefectures.js';
+import { REGIONS, HERO, enemyLevel, stats } from '../data/prefectures.js';
 
 const makeUnit = (key, name, p, s, side, lv, skill, skillAll) => ({
   key, name, p, elem: p ? p.elem : null, side, lv,
@@ -7,13 +7,13 @@ const makeUnit = (key, name, p, s, side, lv, skill, skillAll) => ({
   cd: 0, guard: false, skill, skillAll,
 });
 
-/** foe = { pid: 県id, wild: 雑魚戦かどうか } */
+/** foe = { pid: 地方id, wild: 雑魚戦かどうか } */
 export function initBattle(foe, save) {
-  const p = PREFS[foe.pid];
+  const p = REGIONS[foe.pid];
   const L = save.heroLv;
   const units = [makeUnit('hero', HERO, null, stats(L, null, 1.2), 'ally', L, 'じゅうだんぎり')];
   save.party.forEach((id) => {
-    const q = PREFS[id];
+    const q = REGIONS[id];
     units.push(makeUnit('a' + id, q.chara, q, stats(L, q, 0.85), 'ally', L, q.food + 'らんぶ'));
   });
 

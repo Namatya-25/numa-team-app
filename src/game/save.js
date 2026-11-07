@@ -1,8 +1,8 @@
 // セーブデータ（localStorage）と戦闘報酬の計算
-import { PREFS, enemyLevel, need } from '../data/prefectures.js';
+import { REGIONS, enemyLevel, need } from '../data/prefectures.js';
 import { START, walkable } from './world.js';
 
-const KEY = 'gotochi-ran-rpg-v1';
+const KEY = 'gotochi-ran-rpg-v2'; // 47県版（v1）とは城の id が違うので別のキーにする
 
 export const fresh = () => ({ heroLv: 3, exp: 0, cleared: [], party: [], pos: { ...START }, dir: 'down' });
 
@@ -36,15 +36,15 @@ export function persist(s) {
   }
 }
 
-/** 次に攻略する県のid（全制覇なら 47） */
+/** 次に攻略する地方のid（全制覇なら REGIONS.length） */
 export const nextOf = (s) => {
-  for (let i = 0; i < PREFS.length; i++) if (!s.cleared.includes(i)) return i;
-  return PREFS.length;
+  for (let i = 0; i < REGIONS.length; i++) if (!s.cleared.includes(i)) return i;
+  return REGIONS.length;
 };
 
 /** 勝ったときの経験値・レベルアップ・仲間加入を先に計算しておく */
 export function rewardFor(save, foe) {
-  const p = PREFS[foe.pid];
+  const p = REGIONS[foe.pid];
   const rematch = save.cleared.includes(foe.pid);
   const exp = foe.wild
     ? Math.max(1, enemyLevel(p) - 3) * 6
