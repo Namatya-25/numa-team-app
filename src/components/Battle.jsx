@@ -128,7 +128,9 @@ export default function Battle({ foe, save, reward, onEnd }) {
     try {
       say(`${HERO}たちは逃げ出した！`, true);
       await sleep(800);
-      if (Math.random() < (foe.wild ? 0.7 : 0.35)) {
+      // 1回目は確率で成功、2回目は必ず逃げ切れる
+      b.fleeTries += 1;
+      if (b.fleeTries >= 2 || Math.random() < (foe.wild ? 0.7 : 0.35)) {
         say('うまく逃げ切れた！');
         await sleep(900);
         onEnd('flee');
@@ -319,9 +321,11 @@ export default function Battle({ foe, save, reward, onEnd }) {
             }
           >
             <div className="n">{a.name}</div>
-            <div>H {a.hp}</div>
+            <div>
+              HP {a.hp}/{a.max}
+            </div>
             <div
-              className={'hpbar' + (a.hp / a.max < 0.3 ? ' low' : '')}
+              className={'hpbar ally-hp' + (a.hp / a.max < 0.3 ? ' low' : a.hp / a.max < 0.5 ? ' mid' : '')}
               role="progressbar"
               aria-label={`${a.name} HP`}
               aria-valuemin={0}
@@ -338,7 +342,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
       <div className={'scene ' + ELEM[P.elem].cls}>
         <div key={'b' + b.blink} className={'foe' + (enemy.hp <= 0 ? ' gone' : b.blink ? ' blink' : '')}>
           <div
-            className={'hpbar enemy-hp' + (enemy.hp / enemy.max < 0.3 ? ' low' : '')}
+            className={'hpbar enemy-hp' + (enemy.hp / enemy.max < 0.3 ? ' low' : enemy.hp / enemy.max < 0.5 ? ' mid' : '')}
             role="progressbar"
             aria-label={`${enemy.name} HP`}
             aria-valuemin={0}
