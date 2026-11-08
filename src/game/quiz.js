@@ -4,7 +4,7 @@
 import { KAKEI, KAKEI_SOURCE } from '../data/kakei.js';
 import { SUGATA, SUGATA_SOURCE } from '../data/sugata.js';
 import { PREF_TILES } from '../data/prefectures.js';
-import { LINKS, LINKS_URL, LINKS_FILE, LINKS_YEAR, LINKS_SOURCE, LINKS_ROWS, LINKS_COLS } from '../data/links.js';
+import { LINKS, LINKS_URL, LINKS_FILE, LINKS_YEAR, LINKS_SOURCE, LINKS_ROWS, LINKS_COLS, RENTAL_URL, RENTAL_FILE, RENTAL_TIMES, RENTAL_COLS } from '../data/links.js';
 
 /** 看板の種類。col は看板の板の色、note は看板の見出しに出す説明 */
 const MONEY = '1世帯が1年に使うお金（県庁所在地）';
@@ -458,7 +458,8 @@ const LINKS_Q = {
   0: { metric: 'foreign', amount: '北海道' },
   1: { metric: 'foreign', ask: '東北で', choices: ['宮城', '青森', '岩手', '福島'] },
   2: { metric: 'total', ask: '関東で、東京をのぞいて', choices: ['千葉', '神奈川', '栃木', '群馬'] },
-  3: { metric: 'foreign', ask: '中部で', choices: ['愛知', '静岡', '長野', '山梨'] },
+  // 中部だけはレンタカーのデータ（貸し出し回数）で出す
+  3: { rental: true, ask: '中部で、愛知と静岡をのぞいて', choices: ['山梨', '長野', '富山', '新潟'] },
   4: { metric: 'foreign', ask: '近畿で、大阪と京都をのぞいて', choices: ['兵庫', '和歌山', '奈良', '滋賀'] },
   5: { metric: 'foreign', ask: '中国・四国で、広島をのぞいて', choices: ['香川', '岡山', '愛媛', '山口'] },
   6: { metric: 'total', ask: '九州・沖縄で', choices: ['沖縄', '福岡', '鹿児島', '熊本'] },
@@ -472,6 +473,7 @@ const man = (n) => {
 export function linksQuizFor(regionId) {
   const spec = LINKS_Q[regionId];
   if (!spec) return null;
+  if (spec.rental) return rentalQuiz(spec);
   const m = LINKS_METRIC[spec.metric];
   const vals = LINKS[spec.metric];
   // 表計算ソフトで開いたときの場所：列（C列など）と、県ごとの行番号
@@ -480,6 +482,7 @@ export function linksQuizFor(regionId) {
   const at = (p) => `${p}は«${LINKS_ROWS[p]}行目»`;
   const base = {
     link: LINKS_URL,
+    source: '国土交通省 Project LINKS「観光統計データ」',
     hint: `「${LINKS_FILE}」をダウンロードして表計算ソフトで開き、«${col.letter}列»（左から${col.index}番目の ${col.name}＝${m.name}）を見よう。`,
     wide: false,
     special: true,
@@ -507,5 +510,26 @@ export function linksQuizFor(regionId) {
     choices: shuffle(spec.choices),
     answer: sorted[0],
     reveal: `正解は${sorted[0]}！ ${sorted.map((p) => `${p} ${man(vals[p])}`).join('、')}。`,
+  };
+}
+
+// レンタカーの問題：県ごとに行がたくさんあるので、フィルターでしぼって合計を見る
+const kai = (n) => `約${Math.round(n / 10000).toLocaleString()}万回`;
+function rentalQuiz(spec) {
+  const sorted = [...spec.choices].sort((a, b) => (RENTAL_TIMES[b] || 0) - (RENTAL_TIMES[a] || 0));
+  if ((RENTAL_TIMES[sorted[0]] || 0) === (RENTAL_TIMES[sorted[1]] || 0)) return null;
+  const c = RENTAL_COLS;
+  return {
+    link: RENTAL_URL,
+    special: true,
+    wide: false,
+    q: `${LINKS_YEAR}年度、${spec.ask}レンタカーが貸し出された回数がいちばん多い県は？（このデータの事業者の合計）`,
+    hint:
+      `「${RENTAL_FILE}」をダウンロードして表計算ソフトで開こう。フィルターで«${c.year.letter}列»（${c.year.name}）を ${LINKS_YEAR}、` +
+      `«${c.pref.letter}列»（${c.pref.name}）を県名（例：新潟県）にしぼって、«${c.times.letter}列»（${c.times.name}＝貸し出した回数）を選ぶと、画面の下に合計が出るよ。`,
+    choices: shuffle(spec.choices),
+    answer: sorted[0],
+    reveal: `正解は${sorted[0]}！ ${sorted.map((p) => `${p} ${kai(RENTAL_TIMES[p] || 0)}`).join('、')}。（事業者が出した報告のサンプルなので、全部のレンタカーではない）`,
+    source: '国土交通省 Project LINKS「貸渡実績報告書データ」',
   };
 }

@@ -325,7 +325,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
       await sleep(900);
     }
     say(qz.reveal, true);
-    say(`出典：国土交通省 Project LINKS「観光統計データ」`);
+    say(`出典：${qz.source}`);
     await waitA();
     if (u.hp <= 0) {
       sfx.defeat();
