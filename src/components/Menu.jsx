@@ -1,12 +1,11 @@
 // フィールドのメニュー（つよさ・なかま・ちず・図鑑・データ）
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel, stats, need } from '../data/prefectures.js';
-import { KAKEI_SOURCE } from '../data/kakei.js';
 import { MW, MH, T, grid, own, castles, signs, ownAt } from '../game/world.js';
 import { INSET_FRAMES } from '../data/japanMap.js';
 import { GRASS_COL } from '../game/render.js';
 import { nextOf } from '../game/save.js';
-import { zukanPages, signKey, SIGN_KINDS, ZUKAN_TOTAL } from '../game/quiz.js';
+import { zukanPages, signKey, SIGN_KINDS, SOURCES, ZUKAN_TOTAL } from '../game/quiz.js';
 import { useInput } from '../game/input.js';
 
 const ROOT = ['強さ', '仲間', '地図', '図鑑', 'データ', '閉じる'];
@@ -21,11 +20,10 @@ function Zukan({ pages, page }) {
       <h3>
         データ図鑑　{pg.pref}（看板 {pg.groups.length}/{pg.total}）　全体 {read}/{ZUKAN_TOTAL}
       </h3>
-      <p style={{ margin: '0 0 .3em' }}>1世帯が1年に使うお金（県庁所在地）</p>
       {pg.groups.map((g) => (
         <div key={g.kind} className="zukan-group">
           <div className="zukan-kind" style={{ color: SIGN_KINDS[g.kind].col }}>
-            〔{g.kind}〕
+            〔{g.kind}〕<span className="zukan-note">{SIGN_KINDS[g.kind].note}</span>
           </div>
           <ul>
             {g.lines.map((l) => (
@@ -35,7 +33,7 @@ function Zukan({ pages, page }) {
         </div>
       ))}
       <p className="hint">
-        {pages.length > 1 ? '◀ ▶ でページ送り　' : ''}出典：{KAKEI_SOURCE}
+        {pages.length > 1 ? '◀ ▶ でページ送り　' : ''}出典：{SOURCES.join('、')}
       </p>
     </div>
   );

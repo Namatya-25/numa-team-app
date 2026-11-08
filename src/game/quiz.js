@@ -1,18 +1,74 @@
 // データ図鑑とボスの「データ攻撃」（クイズ）
 // 流れ：道ばたの看板を調べる → 図鑑に記録 → ボスがそのエリアのデータからクイズを出す
-// データは src/data/kakei.js（総務省「家計調査」、scripts/build-kakei.py で生成）
-import { KAKEI } from '../data/kakei.js';
+// データ：src/data/kakei.js（総務省「家計調査」）と src/data/sugata.js（総務省「社会生活統計指標」）
+import { KAKEI, KAKEI_SOURCE } from '../data/kakei.js';
+import { SUGATA, SUGATA_SOURCE } from '../data/sugata.js';
 import { PREF_TILES } from '../data/prefectures.js';
 
-/** 看板の種類。col は看板の板の色 */
+/** 看板の種類。col は看板の板の色、note は看板の見出しに出す説明 */
+const MONEY = '1世帯が1年に使うお金（県庁所在地）';
 export const SIGN_KINDS = {
-  食べもの: { col: '#d9b56e' },
-  'おやつ・飲みもの': { col: '#f2a3b8' },
-  くらし: { col: '#9cc7e8' },
+  食べもの: { col: '#d9b56e', note: MONEY },
+  'おやつ・飲みもの': { col: '#f2a3b8', note: MONEY },
+  くらし: { col: '#9cc7e8', note: MONEY },
+  'しぜん・まち': { col: '#8fd17a', note: '都道府県のデータ（気温・雨・日照は県庁所在地）' },
 };
+export const SOURCES = [KAKEI_SOURCE, SUGATA_SOURCE];
 
 /*
- * 看板に書いてあるデータ：県名 → 看板の種類 → 品目（KAKEI のキー）
+ * クイズと看板で使うデータ。1品目 = {
+ *   label, unit, digits（小数の桁）, values: { 県名: 値 },
+ *   order: 'desc'（大きいほど上位）か 'asc'（小さいほど上位）,
+ *   most / least: 「〇〇県は？」の〇〇（いちばん上位／いちばん下位）, more: 「〇〇のは、AとBのどっち？」の〇〇,
+ *   amountQ: 値を当てる問題の問題文, fake: 値当てのニセモノの作り方（'mul' 倍率 / 数値なら足し引きの幅）
+ * }
+ */
+const DATA = {};
+for (const [k, v] of Object.entries(KAKEI)) {
+  DATA[k] = {
+    label: v.label,
+    unit: '円',
+    digits: 0,
+    values: v.values,
+    order: 'desc',
+    most: `「${v.label}」にいちばんお金を使う`,
+    least: `「${v.label}」にいちばんお金を使わない`,
+    more: `「${v.label}」にお金を多く使う`,
+    amountQ: (p) => `${p}の1世帯が、1年に「${v.label}」に使うお金は？`,
+    fake: 'mul',
+  };
+}
+const sugata = (code, o) => {
+  const v = SUGATA[code];
+  DATA[code] = {
+    label: v.label,
+    unit: v.unit,
+    digits: v.digits,
+    values: v.values,
+    order: 'desc',
+    most: `「${v.label}」がいちばん多い`,
+    least: `「${v.label}」がいちばん少ない`,
+    more: `「${v.label}」が多い`,
+    amountQ: (p) => `${p}の「${v.label}」は？`,
+    fake: 'mul',
+    ...o,
+  };
+};
+sugata('B011001', { most: '面積がいちばん広い', least: '面積がいちばんせまい', more: '面積が広い' });
+sugata('B02101', { order: 'asc', most: '1年の平均気温がいちばん低い', least: '1年の平均気温がいちばん高い', more: '平均気温が低い', fake: 2 });
+sugata('B02401', { least: '1年の日照時間がいちばん短い', most: '1年の日照時間がいちばん長い', more: '日照時間が長い' });
+sugata('B02402', { least: '1年の降水量がいちばん少ない', most: '1年の降水量がいちばん多い', more: '降水量が多い' });
+sugata('H08101', { most: '1人あたりの公園がいちばん広い', least: '1人あたりの公園がいちばんせまい', more: '1人あたりの公園が広い' });
+sugata('H06121', { most: '人口あたりの銭湯がいちばん多い', least: '人口あたりの銭湯がいちばん少ない', more: '人口あたりの銭湯が多い' });
+sugata('H06306', { most: '人口あたりの家の固定電話がいちばん多い', least: '人口あたりの家の固定電話がいちばん少ない', more: '家の固定電話が多い' });
+sugata('H01401', { most: '一戸建ての家の割合がいちばん高い', least: '一戸建ての家の割合がいちばん低い', more: '一戸建ての割合が高い', fake: 12 });
+sugata('H01301', { most: '持ち家の割合がいちばん高い', least: '持ち家の割合がいちばん低い', more: '持ち家の割合が高い', fake: 12 });
+sugata('H06117', { most: '人口あたりの床屋・美容院がいちばん多い', least: '人口あたりの床屋・美容院がいちばん少ない', more: '床屋・美容院が多い' });
+sugata('G01321', { most: '人口あたりの体育館などがいちばん多い', least: '人口あたりの体育館などがいちばん少ない', more: '体育館などが多い' });
+sugata('A06102', { most: '1世帯の人数がいちばん多い', least: '1世帯の人数がいちばん少ない', more: '1世帯の人数が多い', fake: 0.35 });
+
+/*
+ * 看板に書いてあるデータ：県名 → 看板の種類 → 品目（DATA のキー）
  * 今は北海道・東北だけ。ほかのエリアもここに足せば、看板が立ってクイズが出るようになる。
  */
 const FACTS = {
@@ -20,32 +76,39 @@ const FACTS = {
     食べもの: ['米', 'さけ', 'ほたて貝', 'さんま'],
     'おやつ・飲みもの': ['メロン', '炭酸飲料'],
     くらし: ['灯油', 'プロパンガス'],
+    'しぜん・まち': ['B011001', 'B02101', 'H08101'],
   },
   青森: {
     食べもの: ['りんご', 'ほたて貝', 'やきとり', 'カップ麺'],
     'おやつ・飲みもの': ['炭酸飲料', '果実・野菜ジュース'],
     くらし: ['灯油'],
+    'しぜん・まち': ['H06121', 'H06306', 'B02101'],
   },
   岩手: {
     食べもの: ['中華麺', 'わかめ', '納豆', '豆腐'],
     'おやつ・飲みもの': ['ゼリー', 'ココア・ココア飲料'],
     くらし: ['プロパンガス'],
+    'しぜん・まち': ['B011001', 'H06306', 'H06117'],
   },
   宮城: {
     食べもの: ['かまぼこ', 'わかめ', '中華そば'],
+    'しぜん・まち': ['B02402', 'H08101'],
   },
   秋田: {
     食べもの: ['乾うどん・そば', 'さんま', 'ほうれんそう', 'だいこん漬'],
     'おやつ・飲みもの': ['清酒', 'メロン'],
+    'しぜん・まち': ['H01401', 'H01301', 'H06117', 'G01321'],
   },
   山形: {
     食べもの: ['中華そば', 'こんにゃく', 'さといも', 'もやし'],
     'おやつ・飲みもの': ['チョコレート菓子', 'ｱｲｽｸﾘｰﾑ･ｼｬｰﾍﾞｯﾄ', 'せんべい'],
     くらし: ['上下水道料', '学校給食'],
+    'しぜん・まち': ['A06102', 'B02401', 'H08101'],
   },
   福島: {
     食べもの: ['桃', '納豆', 'ハンバーグ'],
     'おやつ・飲みもの': ['ｱｲｽｸﾘｰﾑ･ｼｬｰﾍﾞｯﾄ', 'プリン', '乳飲料', '清酒'],
+    'しぜん・まち': ['B011001', 'B02402'],
   },
 };
 
@@ -53,25 +116,47 @@ const FACTS = {
 export const SIGN_LIST = Object.entries(FACTS).flatMap(([pref, kinds]) => Object.keys(kinds).map((kind) => ({ pref, kind })));
 export const signKey = (pref, kind) => `${pref}/${kind}`;
 
-/** 品目ごとの順位表（支出の多い順）。[[県名, 円], ...] */
+// ---- 順位と表示 ----
+const better = (d, a, b) => (d.order === 'asc' ? a < b : a > b);
+/** 上位から並べた [[県名, 値], ...] */
 const RANKING = {};
-const ranking = (item) => (RANKING[item] ||= Object.entries(KAKEI[item].values).sort((a, b) => b[1] - a[1]));
-const rankOf = (item, pref) => ranking(item).findIndex(([p]) => p === pref) + 1;
-const yenOf = (item, pref) => KAKEI[item].values[pref];
-const yen = (n) => n.toLocaleString() + '円';
+const ranking = (item) => {
+  const d = DATA[item];
+  return (RANKING[item] ||= Object.entries(d.values).sort((a, b) => (d.order === 'asc' ? a[1] - b[1] : b[1] - a[1])));
+};
+/** 順位（同じ値は同じ順位） */
+const rankOf = (item, pref) => {
+  const d = DATA[item];
+  const v = d.values[pref];
+  return 1 + Object.values(d.values).filter((x) => better(d, x, v)).length;
+};
+const LAST = 47;
+const valueOf = (item, pref) => DATA[item].values[pref];
+const fmt = (item, v) => {
+  const d = DATA[item];
+  return v.toLocaleString('ja-JP', { minimumFractionDigits: d.digits, maximumFractionDigits: d.digits }) + d.unit;
+};
+const topPref = (item) => ranking(item)[0][0];
+const unique = (item, r) => ranking(item).filter(([p]) => rankOf(item, p) === r).length === 1;
 
-/** 看板・図鑑に出す1行。例：「りんご　8,246円（全国1位）」 */
+/** 看板・図鑑に出す1行。例：「りんご　8,246円（全国1位）」「1年の降水量　1,028mm（全国でいちばん少ない）」 */
 export function factLine(pref, item) {
+  return `${DATA[item].label}　${fmt(item, valueOf(item, pref))}（${factNote(pref, item)}）`;
+}
+/** 順位の説明。例：「全国1位」「全国3位・1位は北海道」「全国でいちばん少ない」 */
+function factNote(pref, item) {
   const r = rankOf(item, pref);
-  const top = ranking(item)[0][0];
-  return `${KAKEI[item].label}　${yen(yenOf(item, pref))}（全国${r}位${r > 1 ? `・1位は${top}` : ''}）`;
+  const asc = DATA[item].order === 'asc';
+  if (r === 1) return asc ? '低い方から全国1位' : '全国1位';
+  if (r === LAST) return asc ? '全国でいちばん高い' : '全国でいちばん少ない';
+  return asc ? `低い方から${r}位・いちばん低いのは${topPref(item)}` : `全国${r}位・1位は${topPref(item)}`;
 }
 
 /** 看板を調べたときの会話。isNew なら図鑑に記録したことも伝える */
 export function signLines(pref, kind, isNew) {
   const items = FACTS[pref]?.[kind] || [];
   return [
-    `〔${kind}の看板〕${pref}\n1世帯が1年に使うお金（県庁所在地）`,
+    `〔${kind}の看板〕${pref}\n${SIGN_KINDS[kind].note}`,
     items.map((it) => '・' + factLine(pref, it)).join('\n'),
     ...(isNew ? [`${pref}の「${kind}」のデータを図鑑に記録した！`] : []),
   ];
@@ -91,6 +176,7 @@ export function zukanPages(learned) {
 }
 export const ZUKAN_TOTAL = SIGN_LIST.length;
 
+// ---- クイズ ----
 const shuffle = (a) => {
   const b = [...a];
   for (let i = b.length - 1; i > 0; i--) {
@@ -103,29 +189,38 @@ const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
 
 /*
  * クイズの種類。どれも看板に書いてあることだけで答えられる。
- * 1問 = { type, q: 問題文, choices: [文字列...], answer: 正解の文字列, reveal: 正解の説明 }
+ * 1問 = { q: 問題文, choices: [文字列...], answer: 正解の文字列, reveal: 正解の説明, wide?: 選択肢を1列にする }
  */
 const QUIZ_TYPES = {
   // 1位当て：その県が1位の品目 → 選択肢は1〜4位の県
   top: ({ pref, item }) => {
-    const rank = ranking(item);
-    if (rank[0][0] !== pref) return null;
+    if (rankOf(item, pref) !== 1 || !unique(item, 1)) return null;
     return {
-      q: `「${KAKEI[item].label}」にいちばんお金を使う県は？`,
-      choices: shuffle(rank.slice(0, 4).map(([p]) => p)),
+      q: `${DATA[item].most}県は？`,
+      choices: shuffle(ranking(item).slice(0, 4).map(([p]) => p)),
       answer: pref,
-      reveal: `正解は${pref}！ 1年に${yen(rank[0][1])}で全国1位だ。`,
+      reveal: `正解は${pref}！ ${fmt(item, valueOf(item, pref))}で、${DATA[item].most}県だ。`,
+    };
+  },
+  // 最下位当て：その県が47位の品目 → 選択肢は下から4県
+  bottom: ({ pref, item }) => {
+    if (rankOf(item, pref) !== LAST || !unique(item, LAST)) return null;
+    return {
+      q: `${DATA[item].least}県は？`,
+      choices: shuffle(ranking(item).slice(-4).map(([p]) => p)),
+      answer: pref,
+      reveal: `正解は${pref}！ ${fmt(item, valueOf(item, pref))}で、${DATA[item].least}県だ。`,
     };
   },
   // どっち：その県が2位以下の品目 → その県と1位の県の二択
   vs: ({ pref, item }) => {
-    const [top, topYen] = ranking(item)[0];
-    if (top === pref) return null;
+    const top = topPref(item);
+    if (top === pref || valueOf(item, top) === valueOf(item, pref)) return null;
     return {
-      q: `「${KAKEI[item].label}」にお金を使うのは、${pref}と${top}のどっち？`,
+      q: `${DATA[item].more}のは、${pref}と${top}のどっち？`,
       choices: shuffle([pref, top]),
       answer: top,
-      reveal: `正解は${top}！ ${top}は${yen(topYen)}、${pref}は${yen(yenOf(item, pref))}。`,
+      reveal: `正解は${top}！ ${top}は${fmt(item, valueOf(item, top))}、${pref}は${fmt(item, valueOf(item, pref))}。`,
     };
   },
   // 順位当て：その県は全国何位？
@@ -133,47 +228,58 @@ const QUIZ_TYPES = {
     const r = rankOf(item, pref);
     const pool = [1, 2, 3, 4, 5, 10, 20, 30, 47].filter((x) => x !== r);
     const near = pool.filter((x) => Math.abs(x - r) <= 3);
-    const others = shuffle([...shuffle(near).slice(0, 1), ...shuffle(pool.filter((x) => !near.includes(x))).slice(0, 2)]);
+    const others = [...shuffle(near).slice(0, 1), ...shuffle(pool.filter((x) => !near.includes(x))).slice(0, 2)];
     const choices = [r, ...others].slice(0, 4).sort((a, b) => a - b).map((x) => `${x}位`);
+    const asc = DATA[item].order === 'asc';
     return {
-      q: `${pref}の「${KAKEI[item].label}」は、全国で何位？`,
+      q: `${pref}の「${DATA[item].label}」は、${asc ? '低い方から' : '全国で'}何位？`,
       choices,
       answer: `${r}位`,
-      reveal: `正解は${r}位！ 1年に${yen(yenOf(item, pref))}使っている。`,
+      reveal: `正解は${r}位！ ${pref}は${fmt(item, valueOf(item, pref))}。`,
     };
   },
-  // 金額当て：1年にいくら使う？（本物と、半分・倍などのニセモノ）
-  yen: ({ pref, item }) => {
-    const v = yenOf(item, pref);
-    // ニセモノも端数のある金額にして、本物だけ目立たないようにする
-    const fakes = shuffle([0.3, 0.55, 1.8, 2.7]).slice(0, 3).map((k) => Math.round(v * k) + Math.floor(Math.random() * 9) - 4);
-    const choices = [...new Set([v, ...fakes])].sort((a, b) => a - b).map(yen);
+  // 値当て：本物の値と、ニセモノ3つ
+  amount: ({ pref, item }) => {
+    const d = DATA[item];
+    const v = valueOf(item, pref);
+    const k = 10 ** d.digits;
+    const round = (x) => Math.round(x * k) / k;
+    let fakes;
+    if (d.fake === 'mul') {
+      // ニセモノも端数のある値にして、本物だけ目立たないようにする
+      fakes = shuffle([0.3, 0.55, 1.8, 2.7]).slice(0, 3).map((m) => round(v * m + (Math.floor(Math.random() * 9) - 4) / k));
+    } else {
+      fakes = shuffle([-2, -1, 1, 2]).slice(0, 3).map((m) => round(v + m * d.fake + (Math.random() - 0.5) * d.fake * 0.3));
+    }
+    const choices = [...new Set([v, ...fakes].filter((x) => x >= 0))].sort((a, b) => a - b).map((x) => fmt(item, x));
     if (choices.length < 4) return null;
     return {
-      q: `${pref}の1世帯が、1年に「${KAKEI[item].label}」に使うお金は？`,
+      q: d.amountQ(pref),
       choices,
-      answer: yen(v),
-      reveal: `正解は${yen(v)}！ 全国${rankOf(item, pref)}位だ。`,
+      answer: fmt(item, v),
+      reveal: `正解は${fmt(item, v)}！ ${factNote(pref, item)}だ。`,
     };
   },
 };
 
-// 本当の1位はどれ？：「県×品目」の組み合わせ4つから、本当に全国1位のものを選ぶ
+// 本当の1位はどれ？：「県の〇〇」4つから、本当に全国1位のものを選ぶ（低い方が上位の品目は使わない）
 function trueTop(facts) {
-  const tops = facts.filter(({ pref, item }) => rankOf(item, pref) === 1);
-  const fakes = facts.filter(({ pref, item }) => rankOf(item, pref) > 1);
-  if (!tops.length || fakes.length < 3) return null;
+  const usable = facts.filter(({ item }) => DATA[item].order === 'desc');
+  const tops = usable.filter(({ pref, item }) => rankOf(item, pref) === 1 && unique(item, 1));
+  const fakes = usable.filter(({ pref, item }) => rankOf(item, pref) > 1);
+  if (!tops.length) return null;
   const t = pickOne(tops);
   const pairs = shuffle(fakes)
     .filter((f, i, a) => a.findIndex((g) => g.item === f.item) === i && f.item !== t.item)
     .slice(0, 3);
   if (pairs.length < 3) return null;
-  const name = ({ pref, item }) => `${pref}の${KAKEI[item].label}`;
+  const name = ({ pref, item }) => `${pref}の${DATA[item].label}`;
+  const rk = (f) => (rankOf(f.item, f.pref) === LAST ? '最下位' : `${rankOf(f.item, f.pref)}位`);
   return {
     q: '本当に全国1位なのはどれ？',
     choices: shuffle([t, ...pairs].map(name)),
     answer: name(t),
-    reveal: `正解は「${name(t)}」！ ほかは ${pairs.map((f) => `${name(f)}が${rankOf(f.item, f.pref)}位`).join('、')}。`,
+    reveal: `正解は「${name(t)}」！ ほかは ${pairs.map((f) => `${name(f)}が${rk(f)}`).join('、')}。`,
     wide: true,
   };
 }
@@ -199,11 +305,10 @@ export function quizFor(regionId) {
       .filter(Boolean)
       .map((q) => ({ type, ...q })),
   );
-  const tt = [0, 1, 2].map(() => trueTop(facts)).filter(Boolean).map((q) => ({ type: 'trueTop', ...q }));
-  byType.push(tt);
+  byType.push([0, 1, 2].map(() => trueTop(facts)).filter(Boolean).map((q) => ({ type: 'trueTop', ...q })));
   const lists = shuffle(byType.filter((l) => l.length));
   const out = [];
-  for (let i = 0; out.length < 30 && lists.some((l) => l.length > i); i++) {
+  for (let i = 0; out.length < 40 && lists.some((l) => l.length > i); i++) {
     for (const l of lists) if (l[i]) out.push(l[i]);
   }
   return out;

@@ -126,6 +126,7 @@ button{font:inherit;color:inherit}
 .quiz-opts.wide{flex-basis:55%;grid-template-columns:minmax(0,1fr)}
 .quiz-opts .opt{white-space:normal;line-height:1.35;margin:.1em 0}
 .zukan-group{margin-bottom:.3em}
+.zukan-note{color:#bbb;font-size:.8em;margin-left:.5em}
 /* データ図鑑 */
 .zukan li{list-style:none;margin:0 0 .2em}
 .zukan ul{margin:0;padding:0}
