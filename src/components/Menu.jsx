@@ -234,8 +234,20 @@ export default function Menu({ save, setSave, onClose }) {
         </div>
       )}
       {view && (
-        <div className="win panel" onClick={() => view !== '仲間' && setView(null)}>
+        <div className="win panel">
           {body}
+          {/* 左下の「閉じる」ボタン（メニューの一覧に戻る）。スクロールしても下に残る */}
+          <div className="panel-foot">
+            <button
+              className="opt sel panel-close"
+              onClick={(e) => {
+                e.stopPropagation();
+                setView(null);
+              }}
+            >
+              閉じる
+            </button>
+          </div>
         </div>
       )}
     </>

@@ -68,7 +68,9 @@ button{font:inherit;color:inherit}
 
 /* メニュー */
 .menu-root{top:3%;left:3%;min-width:34%}
-.panel{inset:3%;overflow:auto}
+.panel{inset:3%;overflow:auto;display:flex;flex-direction:column}
+.panel-foot{position:sticky;bottom:-.45em;margin-top:auto;padding:.3em 0 .1em;background:#000}
+.panel-close{width:auto;display:inline-block}
 .panel h3{margin:0 0 .3em;font-weight:400;color:var(--kin)}
 .rows{display:grid;gap:.15em}
 .row{display:flex;justify-content:space-between;gap:1em}
