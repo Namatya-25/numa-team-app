@@ -6,6 +6,7 @@ import { initBattle } from '../game/battle.js';
 import { useInput, dispatch } from '../game/input.js';
 import PixelMascot from './PixelMascot.jsx';
 import Typer from './Typer.jsx';
+import { sfx } from '../game/sound.js';
 
 export default function Battle({ foe, save, reward, onEnd }) {
   const [, setTick] = useState(0);
@@ -68,13 +69,19 @@ export default function Battle({ foe, save, reward, onEnd }) {
     if (t.guard) d *= 0.5;
     d = Math.max(1, Math.round(d));
     t.hp = Math.max(0, t.hp - d);
-    if (t.side === 'enemy') b.blink++;
-    else b.shake++;
+    if (t.side === 'enemy') {
+      b.blink++;
+      (e > 1 ? sfx.crit : sfx.hit)();
+    } else {
+      b.shake++;
+      (t.guard ? sfx.guard : sfx.damage)();
+    }
     return { d, e };
   }
 
   async function run() {
     try {
+      (foe.wild ? sfx.encounter : sfx.boss)();
       say(foe.wild ? `${enemy.name}が現れた！` : `${P.name}の守護、${enemy.name}が立ちはだかる！`, true);
       await sleep(1200);
       startInput();
@@ -105,7 +112,11 @@ export default function Battle({ foe, save, reward, onEnd }) {
 
   function choose(k) {
     const it = commandItems().find((x) => x.k === k);
-    if (!it || it.dis) return;
+    if (!it || it.dis) {
+      if (it) sfx.ng();
+      return;
+    }
+    sfx.select();
     if (k === 'flee') {
       b.phase = 'exec';
       rerender();
@@ -132,6 +143,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
       // 1回目は確率で成功、2回目は必ず逃げ切れる
       b.fleeTries += 1;
       if (b.fleeTries >= 2 || Math.random() < (foe.wild ? 0.7 : 0.35)) {
+        sfx.flee();
         say('うまく逃げ切れた！');
         await sleep(900);
         onEnd('flee');
@@ -152,6 +164,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     if (plan === 'bento' && b.bento <= 0) plan = 'atk';
     if (plan === 'atk' || plan === 'sk') {
       const sk = plan === 'sk';
+      if (sk) sfx.skill();
       say(sk ? `${u.name}の${u.skill}！` : `${u.name}の攻撃！`, true);
       await sleep(450);
       const r = hit(u, enemy, sk ? 1.8 * u.sk : 1);
@@ -159,10 +172,12 @@ export default function Battle({ foe, save, reward, onEnd }) {
       say(`${enemy.name}に ${r.d}の ダメージ！${note(r.e)}`);
       await sleep(850);
       if (enemy.hp <= 0) {
+        sfx.defeat();
         say(`${enemy.name}をやっつけた！`);
         await sleep(800);
       }
     } else if (plan === 'grd') {
+      sfx.guard();
       say(`${u.name}は身を守っている。`, true);
       await sleep(700);
     } else if (plan === 'bento') {
@@ -172,6 +187,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
       b.bento--;
       say(`${u.name}はご当地弁当を広げた！`, true);
       await sleep(450);
+      sfx.heal();
       say(`${t.name}のHPが${h}回復した！`);
       await sleep(850);
     }
@@ -185,6 +201,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     if (u.cd === 0 && Math.random() < 0.5) {
       u.cd = 2;
       if (Math.random() < 0.5) {
+        sfx.skill();
         say(`${u.name}の${u.skillAll}！`, true);
         await sleep(500);
         for (const t of alive) {
@@ -194,6 +211,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
         await sleep(950);
       } else {
         const t = pick(alive);
+        sfx.skill();
         say(`${u.name}の ${u.skill}！`, true);
         await sleep(500);
         const r = hit(u, t, 1.6 * u.sk);
@@ -210,6 +228,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     }
     for (const t of alive) {
       if (t.hp <= 0) {
+        sfx.down();
         say(`${t.name}は力尽きた。`);
         await sleep(700);
       }
@@ -249,10 +268,15 @@ export default function Battle({ foe, save, reward, onEnd }) {
   async function checkEnd() {
     if (enemy.hp <= 0) {
       b.phase = 'end';
+      sfx.win();
       say(`経験値${reward.exp}ポイントを獲得！`, true);
-      if (reward.up) say(`${HERO}のレベルが${reward.lv}に上がった！`);
+      if (reward.up) {
+        setTimeout(sfx.levelup, 1300);
+        say(`${HERO}のレベルが${reward.lv}に上がった！`);
+      }
       await waitA();
       if (reward.recruit) {
+        sfx.recruit();
         say(`${P.name}の城を制覇した！`, true);
         say(`${P.chara}が仲間に加わった！`);
         await waitA();
@@ -262,6 +286,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     }
     if (allies.every((a) => a.hp <= 0)) {
       b.phase = 'end';
+      sfx.lose();
       say(`${HERO}たちは全滅した……`, true);
       await waitA();
       onEnd('lose');
@@ -274,6 +299,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     if (b.waitA && (k === 'a' || k === 'b')) {
       const r = b.waitA;
       b.waitA = null;
+      sfx.cursor();
       rerender();
       r();
       return;
@@ -281,6 +307,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     if (b.phase !== 'input') return;
     const items = commandItems();
     const n = items.length;
+    const before = b.cur;
     if (k === 'up') b.cur = Math.max(0, b.cur - 2);
     else if (k === 'down') b.cur = Math.min(n - 1, b.cur + 2);
     else if (k === 'left') b.cur = Math.max(0, b.cur - 1);
@@ -294,8 +321,10 @@ export default function Battle({ foe, save, reward, onEnd }) {
         b.idx = p;
         b.plans.length = p;
         b.cur = 0;
+        sfx.cancel();
       }
     }
+    if (b.cur !== before) sfx.cursor();
     rerender();
   });
 
