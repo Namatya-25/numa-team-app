@@ -476,10 +476,11 @@ export function linksQuizFor(regionId) {
   const vals = LINKS[spec.metric];
   // 表計算ソフトで開いたときの場所：列（C列など）と、県ごとの行番号
   const col = LINKS_COLS[spec.metric];
-  const at = (p) => `${p}は${LINKS_ROWS[p]}行目`;
+  // «» でかこんだところは、戦闘画面で赤く目立たせる（列と行）
+  const at = (p) => `${p}は«${LINKS_ROWS[p]}行目»`;
   const base = {
     link: LINKS_URL,
-    hint: `「${LINKS_FILE}」をダウンロードして表計算ソフトで開き、${col.letter}列（左から${col.index}番目の ${col.name}＝${m.name}）を見よう。`,
+    hint: `「${LINKS_FILE}」をダウンロードして表計算ソフトで開き、«${col.letter}列»（左から${col.index}番目の ${col.name}＝${m.name}）を見よう。`,
     wide: false,
     special: true,
   };

@@ -522,7 +522,18 @@ export default function Battle({ foe, save, reward, onEnd }) {
               <p>{b.ask.q}</p>
               {b.ask.special && (
                 <>
-                  <p className="quiz-hint">ヒント：{b.ask.hint}</p>
+                  <p className="quiz-hint">
+                    ヒント：
+                    {b.ask.hint.split(/«(.+?)»/).map((t, i) =>
+                      i % 2 ? (
+                        <span key={i} className="quiz-mark">
+                          {t}
+                        </span>
+                      ) : (
+                        t
+                      ),
+                    )}
+                  </p>
                   <a
                     className="quiz-link"
                     href={b.ask.link}
