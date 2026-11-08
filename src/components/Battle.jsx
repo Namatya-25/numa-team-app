@@ -21,7 +21,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
   const allies = b.units.filter((u) => u.side === 'ally');
   const enemy = b.enemy;
   const P = REGIONS[foe.pid];
-  const isLargeBossArt = (P.id === 0 || P.id === 1) && !foe.wild;
+  const isLargeBossArt = (P.id === 0 || P.id === 1 || P.id === 2 || P.id === 3 || P.id === 4 || P.id === 5) && !foe.wild;
 
   useEffect(() => {
     // StrictMode で2回実行されても、古い方の進行は止まるようにする
@@ -503,11 +503,11 @@ export default function Battle({ foe, save, reward, onEnd }) {
           >
             <span className="hpbar-fill" style={{ width: `${(enemy.hp / enemy.max) * 100}%` }} />
           </div>
-          {/* 北海道と東北の城ボスは専用PNGに差し替え、野生戦では従来のSVGを表示する */}
+          {/* 一部の城ボスは専用PNGに差し替え、野生戦では従来のSVGを表示する */}
           {isLargeBossArt ? (
             <img
               className="enemy-mascot"
-              src={P.id === 0 ? '/hokkaido-bear-mascot.png' : '/tohoku-gyutan-monster.png'}
+              src={P.id === 0 ? '/hokkaido-bear-mascot.png' : P.id === 1 ? '/tohoku-gyutan-monster.png' : P.id === 2 ? '/kanto-boss.png' : P.id === 3 ? '/chubu-boss.png' : P.id === 4 ? '/kinki-boss.png' : '/chugoku-shikoku-boss.png'}
               alt={P.chara}
               style={{ width: '130cqw' }}
             />
