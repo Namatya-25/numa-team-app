@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel } from './data/prefectures.js';
 import { castles, ownAt, DIRS, START } from './game/world.js';
+import { signLines, signKey, quizFor } from './game/quiz.js';
 import { fresh, hasSaved, loadSave, persist, nextOf, rewardFor } from './game/save.js';
 import { KEYMAP, dispatch, held, press, release } from './game/input.js';
 import Field from './components/Field.jsx';
@@ -94,6 +95,9 @@ export default function App() {
         `地形データ：最高峰 ${p.peak.toLocaleString()}m・森林率 ${p.forest}%\n→ 防御×${m.def.toFixed(2)}　素早さ×${m.spd.toFixed(2)}`,
         `名物「${p.food}」の力（グルメ指数 ${p.foodIdx}）\n→ HP×${m.hp.toFixed(2)}　必殺×${m.sk.toFixed(2)}`,
         `魅力度 ${REGIONS.length}エリア中 ${p.rank}位。${p.rank <= 2 ? '人気エリアの強敵だ！' : ''}（Lv+${m.lv}）`,
+        ...(quizFor(id).length
+          ? [`${p.chara}は「データ攻撃」を使ってくる！\nメニューの「図鑑」で${p.name}のデータを予習しておこう。`]
+          : []),
         `${p.chara}（Lv${enemyLevel(p)}・${p.elem}属性）が待ち構えている。\n挑みますか？`,
       ],
       ['はい', 'いいえ'],
@@ -141,6 +145,14 @@ export default function App() {
     }
   }
 
+  // 看板を調べたとき：書いてあるデータを読み上げて、初めてなら図鑑に記録する
+  function onSign({ pref, kind }) {
+    const key = signKey(pref, kind);
+    const isNew = !(save.learned || []).includes(key);
+    if (isNew) setSave((s) => ({ ...s, learned: [...(s.learned || []), key] }));
+    talk(signLines(pref, kind, isNew));
+  }
+
   function newGame() {
     const f = fresh();
     setSave(f);
@@ -153,6 +165,9 @@ export default function App() {
       '全国のご当地キャラたちが自分の土地を守るため、\n一斉に乱を起こした！',
       `旅人${HERO}よ。本土の7地方と離島、${REGIONS.length}の城を制覇し、\n日本のすみずみまで旅するのだ！`,
       '矢印キーで移動。Zキーで調べる・メニュー。\n城にぶつかると話しかけられる。',
+      '道ばたの看板を調べると、その県のデータが読める。\n看板は「食べもの」「おやつ・飲みもの」「くらし」「しぜん・まち」の4種類。',
+      '読んだデータはメニューの「図鑑」に記録される。',
+      'ボスはそのデータでクイズを出してくるぞ！\nまずは近くの看板を探してみよう。',
     ]);
   }
 
@@ -167,6 +182,7 @@ export default function App() {
             vh={vh}
             onMove={onMove}
             onCastle={onCastle}
+            onSign={onSign}
             onEncounter={encounter ? (pid) => startBattle({ pid, wild: true }) : null}
             onMenu={() => setMenu(true)}
           />
@@ -210,7 +226,7 @@ export default function App() {
       )}
 
       <p className="note">
-        地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。冒険の書（セーブ）はこのブラウザに自動保存されます。
+        図鑑とデータ攻撃のデータは総務省「家計調査」（2023〜2025年平均）と「社会生活統計指標」2026。地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。冒険の書（セーブ）はこのブラウザに自動保存されます。
       </p>
     </div>
   );

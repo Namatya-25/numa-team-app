@@ -1,13 +1,13 @@
 // フィールド：Canvasにマップを描き、主人公の移動・城への接触・エンカウントを処理する
 import { useEffect, useRef } from 'react';
-import { T, MW, MH, grid, own, walkable, castleAt, DIRS, START } from '../game/world.js';
+import { T, MW, MH, grid, own, walkable, castleAt, signAt, DIRS, START } from '../game/world.js';
 import { drawTile, drawHero, TILE, SC } from '../game/render.js';
 import { nextOf } from '../game/save.js';
 import { held, useInput } from '../game/input.js';
 
 const STEP = 150; // 1マス進むのにかかる時間(ms)
 
-export default function Field({ save, vw, vh, onMove, onCastle, onEncounter, onMenu }) {
+export default function Field({ save, vw, vh, onMove, onCastle, onSign, onEncounter, onMenu }) {
   const canvasRef = useRef(null);
 
   // 毎フレーム書き換える値は state ではなく ref に持つ
@@ -19,7 +19,7 @@ export default function Field({ save, vw, vh, onMove, onCastle, onEncounter, onM
   const saveRef = useRef(save);
   saveRef.current = save;
   const cb = useRef({});
-  cb.current = { onMove, onCastle, onEncounter, onMenu };
+  cb.current = { onMove, onCastle, onSign, onEncounter, onMenu };
 
   const isTop = useInput((k) => {
     const s = st.current;
@@ -27,7 +27,9 @@ export default function Field({ save, vw, vh, onMove, onCastle, onEncounter, onM
     if (k === 'a') {
       const [dx, dy] = DIRS[s.dir];
       const c = castleAt(s.x + dx, s.y + dy);
+      const sign = signAt(s.x + dx, s.y + dy);
       if (c >= 0) cb.current.onCastle(c);
+      else if (sign) cb.current.onSign(sign);
       else cb.current.onMenu();
     } else if (k === 'b') cb.current.onMenu();
   });
@@ -78,6 +80,12 @@ export default function Field({ save, vw, vh, onMove, onCastle, onEncounter, onM
         if (c >= 0) {
           s.lock = true; // キーを離すまで再度話しかけない
           cb.current.onCastle(c);
+          return;
+        }
+        const sign = signAt(nx, ny);
+        if (sign) {
+          s.lock = true; // 看板にぶつかると読む
+          cb.current.onSign(sign);
           return;
         }
         if (!walkable(nx, ny)) return;

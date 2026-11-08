@@ -2,11 +2,12 @@
 // 陸地の形と県の範囲は src/data/japanMap.js（scripts/build-map.mjs で生成）にある
 import { REGIONS, PREF_TILES } from '../data/prefectures.js';
 import { MAP_ROWS, MAP_CHARS, NODES } from '../data/japanMap.js';
+import { SIGN_LIST } from './quiz.js';
 
 export const MW = MAP_ROWS[0].length;
 export const MH = MAP_ROWS.length;
 
-export const T = { SEA: 0, GRASS: 1, FOREST: 2, MOUNT: 3, TOWN: 4, ROAD: 5, BRIDGE: 6, CASTLE: 7 };
+export const T = { SEA: 0, GRASS: 1, FOREST: 2, MOUNT: 3, TOWN: 4, ROAD: 5, BRIDGE: 6, CASTLE: 7, SIGN: 8 };
 
 // 座標から決まる疑似乱数（毎回同じ地形になる）
 const rng = (x, y, s) => {
@@ -142,9 +143,49 @@ castles.forEach((c) => {
   }
 });
 
+// 4. データの看板：県庁所在地から近い、道に面したマスに種類ごとに1本ずつ立てる（城と同じく通れない）
+// 看板どうしは1マス以上あける
+export const signs = []; // { x, y, pref, kind }
+const nearSign = (x, y) => signs.some((s) => Math.abs(s.x - x) <= 1 && Math.abs(s.y - y) <= 1);
+PREF_TILES.forEach((t, i) => {
+  const kinds = SIGN_LIST.filter((s) => s.pref === t.name).map((s) => s.kind);
+  if (!kinds.length || !NODES[i]) return;
+  // 1回目は道に面したマス、それで足りなければ2回目は道から近い普通のマスに立てる
+  for (const needRoad of [true, false]) placeSigns(i, t.name, kinds, needRoad);
+});
+function placeSigns(i, prefName, kinds, needRoad) {
+  const [nx, ny] = NODES[i];
+  const seen = new Set([ny * MW + nx]);
+  const queue = [[nx, ny]];
+  while (queue.length && kinds.length) {
+    const [x, y] = queue.shift();
+    const g = grid[y][x];
+    const nextTo = STEPS.some(([dx, dy]) => {
+      if (!inb(x + dx, y + dy)) return false;
+      const n = grid[y + dy][x + dx];
+      return needRoad ? n === T.ROAD : n >= T.GRASS && n <= T.BRIDGE;
+    });
+    if (pref[y][x] === i && g >= T.GRASS && g <= T.TOWN && nextTo && !nearSign(x, y)) {
+      grid[y][x] = T.SIGN;
+      signs.push({ x, y, pref: prefName, kind: kinds.shift() });
+    }
+    for (const [dx, dy] of STEPS) {
+      const k = (y + dy) * MW + (x + dx);
+      if (inb(x + dx, y + dy) && pref[y + dy][x + dx] >= 0 && !seen.has(k)) {
+        seen.add(k);
+        queue.push([x + dx, y + dy]);
+      }
+    }
+  }
+}
+
 export const walkable = (x, y) => inb(x, y) && grid[y][x] >= T.GRASS && grid[y][x] <= T.BRIDGE;
 export const castleAt = (x, y) => (inb(x, y) && grid[y][x] === T.CASTLE ? own[y][x] : -1);
+/** そのマスの看板 { x, y, pref, kind }（看板でなければ null） */
+export const signAt = (x, y) => (inb(x, y) && grid[y][x] === T.SIGN ? signs.find((s) => s.x === x && s.y === y) : null);
 export const ownAt = (x, y) => (inb(x, y) ? own[y][x] : -1);
+/** そのマスの県名（海なら null）。名前は prefectures.js の RAW の書き方 */
+export const prefAt = (x, y) => (inb(x, y) && pref[y][x] >= 0 ? PREF_TILES[pref[y][x]].name : null);
 
 // 城の前（復活地点）。下（正面）→ 左右 → 上の順に、城のまわりで歩けるマスを探す
 const AROUND = [[0, 2], [1, 2], [-1, 0], [-1, 1], [2, 0], [2, 1], [0, -1], [1, -1]];

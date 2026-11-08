@@ -11,7 +11,7 @@ const MAP_VERSION = 2;
 // 本番（npm run build / Vercel）では import.meta.env.DEV が false になるので、通常どおり Lv3
 const START_LV = import.meta.env.DEV ? 6 : 3;
 
-export const fresh = () => ({ heroLv: START_LV, exp: 0, cleared: [], party: [], pos: { ...START }, dir: 'down', mapVer: MAP_VERSION });
+export const fresh = () => ({ heroLv: START_LV, exp: 0, cleared: [], party: [], learned: [], pos: { ...START }, dir: 'down', mapVer: MAP_VERSION });
 
 export function hasSaved() {
   try {

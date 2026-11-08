@@ -1,6 +1,7 @@
 // フィールドのタイルと主人公をドット絵で描く（1タイル = 16px）
 import { REGIONS } from '../data/prefectures.js';
-import { T, grid, own, inb, isSeaT, walkable, castleAt, castles } from './world.js';
+import { T, grid, own, inb, isSeaT, walkable, castleAt, castles, signAt } from './world.js';
+import { SIGN_KINDS } from './quiz.js';
 import { INSET_FRAMES } from '../data/japanMap.js';
 
 export const TILE = 16;
@@ -77,6 +78,15 @@ export function drawTile(ctx, mx, my, sx, sy, tick, cleared, nextId) {
     r('#3b2a1a', 7, 11, 2, 3);
     r('#7da7d9', 4, 9, 2, 2);
     r('#7da7d9', 10, 9, 2, 2);
+  }
+  if (t === T.SIGN) {
+    // 木の看板（データが書いてある）
+    r('rgba(0,0,0,.2)', 4, 13, 9, 2);
+    r('#6b4422', 7, 9, 2, 6); // 柱
+    r('#5a3a1c', 2, 2, 12, 8); // 枠
+    r(SIGN_KINDS[signAt(mx, my).kind].col, 3, 3, 10, 6); // 板（看板の種類で色が違う）
+    r('#7a5a2a', 4, 4, 6, 1); // 文字
+    r('#7a5a2a', 4, 6, 8, 1);
   }
   if (t === T.CASTLE) {
     // 城は 2x2 マスの大きな絵。このマスに当たる部分だけを切り抜いて描く

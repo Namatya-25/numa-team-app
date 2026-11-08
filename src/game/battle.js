@@ -1,5 +1,6 @@
 // 戦闘の初期化（味方と敵のステータスを作る）
 import { REGIONS, HERO, enemyLevel, stats } from '../data/prefectures.js';
+import { quizFor } from './quiz.js';
 
 const makeUnit = (key, name, p, s, side, lv, skill, skillAll) => ({
   key, name, p, elem: p ? p.elem : null, side, lv,
@@ -37,6 +38,8 @@ export function initBattle(foe, save) {
     lines: [], seq: 0, // メッセージ
     blink: 0, shake: 0, // 演出
     bento: 3,
+    quiz: foe.wild ? [] : quizFor(foe.pid), // ボスの「データ攻撃」の問題
+    qi: 0, enemyTurns: 0, ask: null,
     fleeTries: 0, // 「逃げる」を選んだ回数（2回目は必ず成功）
     phase: 'intro', // intro → input → exec → (input …) → end
     idx: 0, cur: 0, plans: [],
