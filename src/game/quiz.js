@@ -3,8 +3,8 @@
 // データ：src/data/kakei.js（総務省「家計調査」）と src/data/sugata.js（総務省「社会生活統計指標」）
 import { KAKEI, KAKEI_SOURCE } from '../data/kakei.js';
 import { SUGATA, SUGATA_SOURCE } from '../data/sugata.js';
-import { PREF_TILES } from '../data/prefectures.js';
-import { LINKS, LINKS_URL, LINKS_FILE, LINKS_YEAR, LINKS_SOURCE, LINKS_ROWS, LINKS_COLS } from '../data/links.js';
+import { PREF_TILES, REGIONS } from '../data/prefectures.js';
+import { LINKS, LINKS_URL, LINKS_FILE, LINKS_YEAR, LINKS_BASE_YEAR, LINKS_SOURCE, LINKS_ROWS, LINKS_ROWS_BASE, LINKS_COLS } from '../data/links.js';
 
 /** 看板の種類。col は看板の板の色、note は看板の見出しに出す説明 */
 const MONEY = '1世帯が1年に使うお金（県庁所在地）';
@@ -448,64 +448,85 @@ export function quizFor(regionId) {
 }
 
 // ---- 特別データ攻撃（国土交通省 Project LINKS のサイトで調べないと解けない問題） ----
-// 各地方のボス戦で1回だけ出る。正解はデータから計算するので、データを作り直しても正解はずれない。
+// 各地方のボス戦で1回だけ出る。問題はボスの県（その地方の城がある県）のことを知るためのもので、
+// 3種類のうちどれか1つが毎回えらばれる。正解はデータから計算するので、データを作り直しても正解はずれない。
 const LINKS_METRIC = {
-  total: { col: 'TOTAL_GUEST_COUNT', name: '延べ宿泊者数（日本人と外国人の合計）' },
-  foreign: { col: 'STAY_GUEST_COUNT_FOREIGN', name: '外国人の延べ宿泊者数' },
-};
-// 地方ごとの問題：metric = どの列を見るか、choices = 選択肢の県（正解はこの中でいちばん多い県）
-const LINKS_Q = {
-  0: { metric: 'foreign', amount: '北海道' },
-  1: { metric: 'foreign', ask: '東北で', choices: ['宮城', '青森', '岩手', '福島'] },
-  2: { metric: 'total', ask: '関東で、東京をのぞいて', choices: ['千葉', '神奈川', '栃木', '群馬'] },
-  3: { metric: 'foreign', ask: '中部で', choices: ['愛知', '静岡', '長野', '山梨'] },
-  4: { metric: 'foreign', ask: '近畿で、大阪と京都をのぞいて', choices: ['兵庫', '和歌山', '奈良', '滋賀'] },
-  5: { metric: 'foreign', ask: '中国・四国で、広島をのぞいて', choices: ['香川', '岡山', '愛媛', '山口'] },
-  6: { metric: 'total', ask: '九州・沖縄で', choices: ['沖縄', '福岡', '鹿児島', '熊本'] },
+  total: '延べ宿泊者数（日本人と外国人の合計）',
+  foreign: '外国人の延べ宿泊者数',
 };
 const man = (n) => {
   const m = Math.round(n / 10000);
   return m >= 10000 ? `約${Math.floor(m / 10000)}億${m % 10000 ? (m % 10000).toLocaleString() + '万' : ''}人泊` : `約${m.toLocaleString()}万人泊`;
 };
+// 本物とはっきり違うニセモノを、候補の中から3つえらぶ（比が1.6倍以上はなれているもの）
+const farFakes = (real, pool) => {
+  const ok = pool.filter((x) => x > 0 && Math.max(x, real) / Math.min(x, real) >= 1.6);
+  const picked = [];
+  for (const x of shuffle(ok)) if (picked.every((y) => Math.max(x, y) / Math.min(x, y) >= 1.4) && picked.length < 3) picked.push(x);
+  return picked;
+};
 
-/** その地方の特別データ攻撃の問題（なければ null） */
+/** その地方の特別データ攻撃の問題（なければ null）。呼ぶたびに3種類のどれかになる */
 export function linksQuizFor(regionId) {
-  const spec = LINKS_Q[regionId];
-  if (!spec) return null;
-  const m = LINKS_METRIC[spec.metric];
-  const vals = LINKS[spec.metric];
-  // 表計算ソフトで開いたときの場所：列（C列など）と、県ごとの行番号
-  const col = LINKS_COLS[spec.metric];
-  // «» でかこんだところは、戦闘画面で赤く目立たせる（列と行）
-  const at = (p) => `${p}は«${LINKS_ROWS[p]}行目»`;
-  const base = {
-    link: LINKS_URL,
-    hint: `「${LINKS_FILE}」をダウンロードして表計算ソフトで開き、«${col.letter}列»（左から${col.index}番目の ${col.name}＝${m.name}）を見よう。`,
-    wide: false,
-    special: true,
-  };
-  if (spec.amount) {
-    // 値当て：本物と、0.1倍・3倍・10倍のニセモノ
-    const v = vals[spec.amount];
-    const choices = [v, v * 0.1, v * 3, v * 10].sort((a, b) => a - b).map(man);
-    return {
-      ...base,
-      q: `${LINKS_YEAR}年に${spec.amount}に泊まった外国人は、のべ何人泊？`,
-      hint: base.hint + `${LINKS_YEAR}年の${at(spec.amount)}。`,
-      choices,
-      answer: man(v),
-      reveal: `正解は${man(v)}！（${v.toLocaleString()}人泊）`,
-    };
+  const region = REGIONS[regionId];
+  if (!region || !LINKS_REGION.has(regionId)) return null;
+  const pref = PREF_TILES[region.castlePref].name;
+  const col = (key) => LINKS_COLS[key];
+  const colText = (key) => `«${col(key).letter}列»（左から${col(key).index}番目の ${col(key).name}＝${LINKS_METRIC[key]}）`;
+  const head = `「${LINKS_FILE}」をダウンロードして表計算ソフトで開こう。`;
+  const base = { link: LINKS_URL, special: true, wide: false };
+  const total = LINKS.total[pref];
+  const foreign = LINKS.foreign[pref];
+  const foreignBase = LINKS.foreign_base[pref];
+
+  const types = [
+    // 外国人の割合：泊まった人のうち、外国人は何%？
+    () => {
+      const pct = Math.round((foreign / total) * 100);
+      const fakes = farFakes(pct, [3, 6, 10, 15, 25, 40, 60, 80]);
+      if (pct < 1 || fakes.length < 3) return null;
+      return {
+        ...base,
+        q: `${LINKS_YEAR}年に${pref}に泊まった人のうち、外国人の割合はだいたい何%？`,
+        hint: `${head}${pref}の${LINKS_YEAR}年は«${LINKS_ROWS[pref]}行目»。${colText('total')}と${colText('foreign')}をくらべよう。`,
+        choices: [pct, ...fakes].sort((a, b) => a - b).map((x) => `約${x}%`),
+        answer: `約${pct}%`,
+        reveal: `正解は約${pct}%！ ${pref}に泊まった人のおよそ${Math.max(1, Math.round(total / foreign))}人に1人が外国人だ。`,
+      };
+    },
+    // コロナからの回復：2021年から2024年で、外国人は何倍になった？
+    () => {
+      const times = foreign / foreignBase;
+      const real = times >= 10 ? Math.round(times) : Math.round(times * 10) / 10;
+      const fakes = farFakes(real, [real / 10, real / 4, real / 2.5, real * 2.5, real * 4].map((x) => (x >= 10 ? Math.round(x) : Math.round(x * 10) / 10)));
+      if (!foreignBase || fakes.length < 3) return null;
+      return {
+        ...base,
+        q: `${LINKS_BASE_YEAR}年から${LINKS_YEAR}年で、${pref}に泊まった外国人はだいたい何倍になった？`,
+        hint: `${head}${colText('foreign')}の、${pref}の${LINKS_BASE_YEAR}年«${LINKS_ROWS_BASE[pref]}行目»と${LINKS_YEAR}年«${LINKS_ROWS[pref]}行目»をくらべよう。`,
+        choices: [real, ...fakes].sort((a, b) => a - b).map((x) => `約${x}倍`),
+        answer: `約${real}倍`,
+        reveal: `正解は約${real}倍！ ${LINKS_BASE_YEAR}年はコロナで外国人の旅行者がほとんど来られなかった（${foreignBase.toLocaleString()}人泊）。${LINKS_YEAR}年は${foreign.toLocaleString()}人泊まで戻った。`,
+      };
+    },
+    // 延べ宿泊者数：その県に泊まった人は、のべ何人泊？
+    () => {
+      const choices = [total, total * 0.1, total * 3, total * 10].sort((a, b) => a - b).map(man);
+      return {
+        ...base,
+        q: `${LINKS_YEAR}年に${pref}に泊まった人は、のべ何人泊？（日本人と外国人の合計）`,
+        hint: `${head}${colText('total')}の、${pref}の${LINKS_YEAR}年«${LINKS_ROWS[pref]}行目»を見よう。`,
+        choices,
+        answer: man(total),
+        reveal: `正解は${man(total)}！（${total.toLocaleString()}人泊）`,
+      };
+    },
+  ];
+  for (const make of shuffle(types)) {
+    const q = make();
+    if (q) return q;
   }
-  const sorted = [...spec.choices].sort((a, b) => vals[b] - vals[a]);
-  if (vals[sorted[0]] === vals[sorted[1]]) return null;
-  return {
-    ...base,
-    q: `${LINKS_YEAR}年、${spec.ask}${m.name}がいちばん多い県は？`,
-    // 正解がわからないように、行番号の順に並べる
-    hint: base.hint + `${LINKS_YEAR}年の行は、${[...spec.choices].sort((a, b) => LINKS_ROWS[a] - LINKS_ROWS[b]).map(at).join('、')}。`,
-    choices: shuffle(spec.choices),
-    answer: sorted[0],
-    reveal: `正解は${sorted[0]}！ ${sorted.map((p) => `${p} ${man(vals[p])}`).join('、')}。`,
-  };
+  return null;
 }
+// 特別データ攻撃が出る地方：本土の7地方（離島編は出ない）
+const LINKS_REGION = new Set([0, 1, 2, 3, 4, 5, 6]);
