@@ -144,12 +144,15 @@ castles.forEach((c) => {
 });
 
 // 4. データの看板：県庁所在地から近い、道に面したマスに種類ごとに1本ずつ立てる（城と同じく通れない）
-// 看板どうしは1マス以上あける
+// 看板どうしは1マス以上あける。北海道は広いので、看板どうしをもっと離す
 export const signs = []; // { x, y, pref, kind }
-const nearSign = (x, y) => signs.some((s) => Math.abs(s.x - x) <= 1 && Math.abs(s.y - y) <= 1);
+const SIGN_GAP = { 北海道: 5 };
+let gap = 1;
+const nearSign = (x, y) => signs.some((s) => Math.abs(s.x - x) <= gap && Math.abs(s.y - y) <= gap);
 PREF_TILES.forEach((t, i) => {
   const kinds = SIGN_LIST.filter((s) => s.pref === t.name).map((s) => s.kind);
   if (!kinds.length || !NODES[i]) return;
+  gap = SIGN_GAP[t.name] || 1;
   // 1回目は道に面したマス、それで足りなければ2回目は道から近い普通のマスに立てる
   for (const needRoad of [true, false]) placeSigns(i, t.name, kinds, needRoad);
 });
