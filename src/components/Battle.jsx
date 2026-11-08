@@ -197,10 +197,22 @@ export default function Battle({ foe, save, reward, onEnd }) {
     const alive = allies.filter((a) => a.hp > 0);
     if (!alive.length || u.hp <= 0) return;
     const pick = (a) => a[Math.floor(Math.random() * a.length)];
-    // 敵は（ボスも雑魚敵も）2ターンに1回「データ攻撃」（クイズ）をしてくる。最初の敵の番はかならずデータ攻撃
-    const quizNow = b.quiz.length > 0 && b.enemyTurns++ % 2 === 0;
-    if (quizNow) await quizTurn(u, alive);
-    else if (u.cd === 0 && Math.random() < 0.5) {
+    // 敵の行動の順番
+    // ・ボス：通常攻撃 → データ攻撃 → 特別データ攻撃（1回だけ） → 通常攻撃 → データ攻撃 → … とくり返す
+    // ・雑魚敵：データ攻撃 → 通常攻撃 → データ攻撃 → … とくり返す
+    const n = b.enemyTurns++;
+    let act = 'normal';
+    if (foe.wild) {
+      if (b.quiz.length && n % 2 === 0) act = 'quiz';
+    } else if (n === 2 && b.links) act = 'links';
+    else if (b.quiz.length && n % 2 === 1) act = 'quiz';
+    if (act === 'links') {
+      const lq = b.links;
+      b.links = null;
+      await linksTurn(u, alive, lq);
+    } else if (act === 'quiz') await quizTurn(u, alive);
+    // 必殺技は、最初の番（かならず通常攻撃）のあとから
+    else if (n > 0 && u.cd === 0 && Math.random() < 0.5) {
       u.cd = 2;
       if (Math.random() < 0.5) {
         sfx.skill();
@@ -257,13 +269,6 @@ export default function Battle({ foe, save, reward, onEnd }) {
 
   // データ攻撃：正解なら跳ね返して敵にダメージ、不正解なら味方全員に大ダメージ
   async function quizTurn(u, alive) {
-    // ボス戦の最初のデータ攻撃は、Project LINKS のサイトで調べる「特別データ攻撃」（1回だけ）
-    if (b.links) {
-      const lq = b.links;
-      b.links = null;
-      await linksTurn(u, alive, lq);
-      return;
-    }
     const qz = b.quiz[b.qi++ % b.quiz.length];
     sfx.skill();
     say(`${u.name}のデータ攻撃！`, true);
