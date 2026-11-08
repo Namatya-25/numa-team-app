@@ -198,7 +198,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
     const alive = allies.filter((a) => a.hp > 0);
     if (!alive.length || u.hp <= 0) return;
     const pick = (a) => a[Math.floor(Math.random() * a.length)];
-    // ボスは2ターンに1回「データ攻撃」（クイズ）をしてくる
+    // 敵は（ボスも雑魚敵も）2ターンに1回「データ攻撃」（クイズ）をしてくる。最初の敵の番はかならずデータ攻撃
     const quizNow = b.quiz.length > 0 && b.enemyTurns++ % 2 === 0;
     if (quizNow) await quizTurn(u, alive);
     else if (u.cd === 0 && Math.random() < 0.5) {
