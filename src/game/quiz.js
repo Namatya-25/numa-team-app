@@ -11,7 +11,7 @@ export const SIGN_KINDS = {
   食べもの: { col: '#d9b56e', note: MONEY },
   くらし: { col: '#9cc7e8', note: MONEY },
   'しぜん・まち': { col: '#8fd17a', note: '都道府県のデータ（気温・雨・日照は県庁所在地）' },
-  'からだ・まなび': { col: '#c3a6f0', note: '都道府県のデータ' },
+  人口: { col: '#c3a6f0', note: '都道府県のデータ' },
 };
 export const SOURCES = [KAKEI_SOURCE, SUGATA_SOURCE];
 
@@ -66,12 +66,11 @@ sugata('H01301', { most: '持ち家の割合がいちばん高い', least: '持�
 sugata('H06117', { most: '人口あたりの床屋・美容院がいちばん多い', least: '人口あたりの床屋・美容院がいちばん少ない', more: '床屋・美容院が多い' });
 sugata('G01321', { most: '人口あたりの体育館などがいちばん多い', least: '人口あたりの体育館などがいちばん少ない', more: '体育館などが多い' });
 sugata('A06102', { most: '1世帯の人数がいちばん多い', least: '1世帯の人数がいちばん少ない', more: '1世帯の人数が多い', fake: 0.35 });
-sugata('I0210104', { most: '中学2年女子の平均身長がいちばん高い', least: '中学2年女子の平均身長がいちばん低い', more: '中学2年女子の平均身長が高い', fake: 1.5 });
-sugata('E0110106', { most: '人口あたりのこども園がいちばん多い', least: '人口あたりのこども園がいちばん少ない', more: 'こども園が多い' });
-sugata('F01201', { most: '農業・漁業などで働く人の割合がいちばん高い', least: '農業・漁業などで働く人の割合がいちばん低い', more: '農業・漁業などで働く人の割合が高い', fake: 3 });
-sugata('E10102', { most: '小学生1人あたりの教育費がいちばん多い', least: '小学生1人あたりの教育費がいちばん少ない', more: '小学生1人あたりの教育費が多い' });
-sugata('E0110103', { most: '人口あたりの高校がいちばん多い', least: '人口あたりの高校がいちばん少ない', more: '高校が多い' });
-sugata('K06101', { most: '人口あたりの犯罪の件数がいちばん多い', least: '人口あたりの犯罪の件数がいちばん少ない', more: '犯罪の件数が多い' });
+sugata('A011000', { most: '人口がいちばん多い', least: '人口がいちばん少ない', more: '人口が多い' });
+sugata('A01201', { most: '人口密度がいちばん高い', least: '人口密度がいちばん低い', more: '人口密度が高い', lastNote: '全国でいちばん低い' });
+sugata('A03503', { most: 'お年寄り（65歳以上）の割合がいちばん高い', least: 'お年寄り（65歳以上）の割合がいちばん低い', more: 'お年寄りの割合が高い', fake: 4 });
+sugata('A03501', { most: '子ども（15歳未満）の割合がいちばん高い', least: '子ども（15歳未満）の割合がいちばん低い', more: '子どもの割合が高い', fake: 2, lastNote: '全国でいちばん低い' });
+sugata('A05111', { most: '人口がいちばん増えている', least: '人口がいちばん減っている', more: '人口が増えている', fake: 6, lastNote: '全国でいちばん減っている' });
 
 /*
  * 看板に書いてあるデータ：県名 → 看板の種類 → 品目（DATA のキー）
@@ -82,15 +81,16 @@ const FACTS = {
     食べもの: ['米', 'さけ', 'ほたて貝', 'さんま'],
     くらし: ['灯油', 'プロパンガス'],
     'しぜん・まち': ['B011001', 'B02101', 'H08101'],
+    人口: ['A011000', 'A01201'],
   },
   // 東北は県が多いので、1県2枚にしぼる（4種類の看板はエリア全体でそろう）
   青森: {
     食べもの: ['りんご', 'ほたて貝', 'やきとり', 'カップ麺'],
-    'からだ・まなび': ['I0210104', 'E0110106', 'F01201'],
+    'しぜん・まち': ['H06121', 'H06306', 'B02101'],
   },
   岩手: {
     食べもの: ['中華麺', 'わかめ', '納豆', 'ゼリー'],
-    'からだ・まなび': ['E10102', 'E0110103', 'K06101'],
+    'しぜん・まち': ['B011001', 'H06306', 'H06117'],
   },
   宮城: {
     食べもの: ['かまぼこ', 'わかめ', '中華そば'],
@@ -98,7 +98,7 @@ const FACTS = {
   },
   秋田: {
     食べもの: ['乾うどん・そば', 'さんま', 'ほうれんそう', 'だいこん漬'],
-    'しぜん・まち': ['H01401', 'H01301', 'H06117', 'G01321'],
+    人口: ['A03503', 'A03501', 'A05111'],
   },
   山形: {
     食べもの: ['中華そば', 'こんにゃく', 'さといも', 'もやし'],
@@ -146,7 +146,7 @@ function factNote(pref, item) {
   const r = rankOf(item, pref);
   const asc = DATA[item].order === 'asc';
   if (r === 1) return asc ? '低い方から全国1位' : '全国1位';
-  if (r === LAST) return asc ? '全国でいちばん高い' : '全国でいちばん少ない';
+  if (r === LAST) return DATA[item].lastNote || (asc ? '全国でいちばん高い' : '全国でいちばん少ない');
   return asc ? `低い方から${r}位・いちばん低いのは${topPref(item)}` : `全国${r}位・1位は${topPref(item)}`;
 }
 
@@ -226,8 +226,10 @@ const QUIZ_TYPES = {
     const r = rankOf(item, pref);
     const pool = [1, 2, 3, 4, 5, 10, 20, 30, 47].filter((x) => x !== r);
     const near = pool.filter((x) => Math.abs(x - r) <= 3);
-    const others = [...shuffle(near).slice(0, 1), ...shuffle(pool.filter((x) => !near.includes(x))).slice(0, 2)];
-    const choices = [r, ...others].slice(0, 4).sort((a, b) => a - b).map((x) => `${x}位`);
+    // 近い順位を1つ（あれば）と、離れた順位を足して、いつも4択にする
+    const nearOne = shuffle(near).slice(0, 1);
+    const others = [...nearOne, ...shuffle(pool.filter((x) => !nearOne.includes(x))).slice(0, 3 - nearOne.length)];
+    const choices = [r, ...others].sort((a, b) => a - b).map((x) => `${x}位`);
     const asc = DATA[item].order === 'asc';
     return {
       q: `${pref}の「${DATA[item].label}」は、${asc ? '低い方から' : '全国で'}何位？`,
@@ -249,7 +251,8 @@ const QUIZ_TYPES = {
     } else {
       fakes = shuffle([-2, -1, 1, 2]).slice(0, 3).map((m) => round(v + m * d.fake + (Math.random() - 0.5) * d.fake * 0.3));
     }
-    const choices = [...new Set([v, ...fakes].filter((x) => x >= 0))].sort((a, b) => a - b).map((x) => fmt(item, x));
+    // 本物が0以上なら、ニセモノもマイナスにはしない（人口の増え方のようにマイナスもある値はそのまま）
+    const choices = [...new Set([v, ...fakes].filter((x) => v < 0 || x >= 0))].sort((a, b) => a - b).map((x) => fmt(item, x));
     if (choices.length < 4) return null;
     return {
       q: d.amountQ(pref),
