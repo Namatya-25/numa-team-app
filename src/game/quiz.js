@@ -87,7 +87,7 @@ sugata('F01202', { most: '工場や工事で働く人の割合がいちばん高
 
 /*
  * 看板に書いてあるデータ：県名 → 看板の種類 → 品目（DATA のキー）
- * 九州（沖縄を含む）まで。1県1枚（北海道だけ2枚）。離島編のエリアにはまだ看板がない。
+ * 九州（沖縄を含む）まで。1県1枚（北海道だけ2枚）。
  * 「くらし」の看板は今は使っていない（SIGN_KINDS には残してある）。
  */
 const FACTS = {
@@ -288,7 +288,7 @@ export function signLines(pref, kind, isNew) {
   return [
     `〔${kind}の看板〕${pref}\n${SIGN_KINDS[kind].note}`,
     items.map((it) => '・' + factLine(pref, it)).join('\n'),
-    ...(isNew ? [`${pref}の「${kind}」のデータを図鑑に記録した！`] : []),
+    ...(isNew ? [`${pref}の「${kind}」のデータをデータ図鑑に記録した！`] : []),
   ];
 }
 

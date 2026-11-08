@@ -96,7 +96,7 @@ export default function App() {
         `名物「${p.food}」の力（グルメ指数 ${p.foodIdx}）\n→ HP×${m.hp.toFixed(2)}　必殺×${m.sk.toFixed(2)}`,
         `魅力度 ${REGIONS.length}エリア中 ${p.rank}位。${p.rank <= 2 ? '人気エリアの強敵だ！' : ''}（Lv+${m.lv}）`,
         ...(quizFor(id).length
-          ? [`${p.chara}は「データ攻撃」を使ってくる！\nメニューの「図鑑」で${p.name}のデータを予習しておこう。`]
+          ? [`${p.chara}は「データ攻撃」を使ってくる！\nメニューの「データ図鑑」で${p.name}のデータを予習しておこう。`]
           : []),
         ...(linksQuizFor(id)
           ? ['さらに一度だけ、国のオープンデータ「Project LINKS」を\n自分で調べないと解けない「特別データ攻撃」をしてくる！',
@@ -167,13 +167,17 @@ export default function App() {
     talk([
       'ここは北海道。日本列島の北の果て。',
       '全国のご当地キャラたちが自分の土地を守るため、\n一斉に乱を起こした！',
-      `旅人${HERO}よ。本土の7地方と離島、${REGIONS.length}の城を制覇し、\n日本のすみずみまで旅するのだ！`,
+      `旅人${HERO}よ。北海道から九州・沖縄まで、${REGIONS.length}つの地方の城を制覇し、\n日本列島を縦断するのだ！`,
       '矢印キーで移動。Zキーで調べる・メニュー。\n城にぶつかると話しかけられる。',
       '道ばたの看板を調べると、その県のデータが読める。\n看板は「食べもの」「しぜん・まち」「人口」の3種類。',
-      '読んだデータはメニューの「図鑑」に記録される。',
+      '読んだデータはメニューの「データ図鑑」に記録される。',
       '敵はそのデータでクイズを出してくるぞ！\nまずは近くの看板を探してみよう。',
     ]);
   }
+
+  // 今いる地方（海や橋の上なら、最後にいた地方）
+  const hereId = ownAt(save.pos.x, save.pos.y);
+  const hereRegion = REGIONS[hereId >= 0 ? hereId : lastArea.current];
 
   return (
     <div className="console">
@@ -195,12 +199,26 @@ export default function App() {
           <Battle key={battle.key} foe={battle.foe} save={save} reward={battle.reward} onEnd={endBattle} />
         )}
         {mode === 'title' && <Title hasSave={hadSave.current} onNew={newGame} onContinue={() => setMode('field')} />}
-        {mode === 'field' && area && !dialog && !menu && (
-          <div key={area.n} className="win area">
-            {area.name}
+        {/* 左上：今いる地方の名前（いつも出す。新しい地方に入ったときだけ少し目立たせる） */}
+        {mode === 'field' && !dialog && !menu && hereRegion && (
+          <div key={area ? area.n : 'start'} className={'win area' + (area ? ' flash' : '')}>
+            {hereRegion.name}
           </div>
         )}
         {mode === 'field' && menu && <Menu save={save} setSave={setSave} onClose={() => setMenu(false)} />}
+        {mode === 'field' && !menu && !dialog && (
+          <button
+            className="screen-menu"
+            aria-label="メニューを開く"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenu(true);
+            }}
+          >
+            メニュー
+          </button>
+        )}
         {dialog && mode !== 'battle' && <Dialog key={dialog.id} d={dialog} onClose={() => setDialog(null)} />}
       </div>
 

@@ -49,8 +49,11 @@ button{font:inherit;color:inherit}
 .dlg{left:3%;right:3%;bottom:3%;min-height:30%;cursor:pointer}
 .dlg p{margin:0;white-space:pre-wrap}
 .choice{right:3%;bottom:calc(3% + 30% + .6em)}
-.area{top:3%;left:3%;animation:fadeout 2.6s forwards}
-@keyframes fadeout{0%,75%{opacity:1}100%{opacity:0}}
+.area{top:3%;left:3%;pointer-events:none}
+/* 新しい地方に入ったときだけ、少し大きく光らせる */
+.area.flash{animation:areaflash 1.2s ease-out}
+@keyframes areaflash{0%{transform:scale(1.25);color:var(--kin)}100%{transform:scale(1);color:#fff}}
+.area{transform-origin:left top}
 
 /* タイトル */
 .title{position:absolute;inset:0;background:rgba(0,0,0,.62);display:grid;align-content:center;justify-items:center;gap:4cqw;text-align:center;padding:4%}
@@ -65,7 +68,9 @@ button{font:inherit;color:inherit}
 
 /* メニュー */
 .menu-root{top:3%;left:3%;min-width:34%}
-.panel{inset:3%;overflow:auto}
+.panel{inset:3%;overflow:auto;display:flex;flex-direction:column}
+.panel-foot{position:sticky;bottom:-.45em;margin-top:auto;padding:.3em 0 .1em;background:#000}
+.panel-close{width:auto;display:inline-block}
 .panel h3{margin:0 0 .3em;font-weight:400;color:var(--kin)}
 .rows{display:grid;gap:.15em}
 .row{display:flex;justify-content:space-between;gap:1em}
@@ -145,6 +150,9 @@ button{font:inherit;color:inherit}
 .dpad button:active{background:var(--frame-2);color:#fff}
 .dpad .c{background:var(--frame);border-radius:0}
 .ab{display:flex;gap:14px;align-items:center}
+/* 地図の画面の右上に重ねるメニューボタン */
+.screen-menu{position:absolute;top:3%;right:3%;z-index:2;background:#000;color:#fff;border:.2em solid #fff;border-radius:.5em;box-shadow:0 0 0 .16em #000;padding:.25em .7em;font:inherit;cursor:pointer;touch-action:none}
+.screen-menu:active{filter:brightness(1.4)}
 .ab button{border:0;border-radius:50%;font-size:20px;color:#fff;touch-action:none;cursor:pointer}
 .ab .a{width:66px;height:66px;background:var(--shu)}
 .ab .b{width:54px;height:54px;background:var(--frame-2);margin-top:28px}
