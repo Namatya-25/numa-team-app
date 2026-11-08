@@ -4,9 +4,9 @@
 //   1. https://github.com/dataofjapan/land の japan.geojson をダウンロードする
 //   2. node scripts/build-map.mjs <japan.geojson のパス>
 //
-// 地図は 1 マス約 20km。沖縄本島・八重山（西表島など）・小笠原は実際の位置だと地図が広くなりすぎるので、
-// 拡大して空いている海に「はめ込み図」として置く（沖縄は九州の南、小笠原は関東の南東。北方領土は実際の位置のまま）。
-// 宮古島・大東諸島・奄美などは省いている。
+// 地図は 1 マス約 20km。沖縄本島は実際の位置だと地図が広くなりすぎるので、
+// 拡大して九州の南の空いている海に「はめ込み図」として置く。北方領土は北海道の一部として実際の位置のまま。
+// 八重山・宮古島・大東諸島・小笠原・奄美などの離島は省いている。
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -29,9 +29,7 @@ const H = MAIN_BOTTOM + 12; // 下に沖縄のはめ込み図を置くぶん広�
 
 // はめ込み図：名前, 経度の範囲, 緯度の範囲, 拡大率, 置く位置（左上のマス）
 const INSETS = [
-  { name: '八重山', lon: [122.9, 124.4], lat: [24.0, 24.7], zoom: 2, at: [MARGIN, MAIN_BOTTOM + 2] },
   { name: '沖縄本島', lon: [127.0, 128.4], lat: [26.0, 26.95], zoom: 1.5, at: [MARGIN + 17, MAIN_BOTTOM + 1] },
-  { name: '小笠原', lon: [142.05, 142.32], lat: [26.55, 27.2], zoom: 6, at: [W - MARGIN - 14, MAIN_BOTTOM - 26] },
 ];
 for (const s of INSETS) {
   s.cos = Math.cos((((s.lat[0] + s.lat[1]) / 2) * Math.PI) / 180);
@@ -40,7 +38,7 @@ for (const s of INSETS) {
   s.h = Math.ceil((s.lat[1] - s.lat[0]) * s.k);
 }
 
-// 県庁所在地（離島は島の中心）。城と道の基準点になる。[緯度, 経度]
+// 県庁所在地。城と道の基準点になる。[緯度, 経度]
 const CAPITAL = {
   北海道: [43.06, 141.35], 青森: [40.82, 140.74], 岩手: [39.7, 141.15], 宮城: [38.27, 140.87],
   秋田: [39.72, 140.1], 山形: [38.24, 140.36], 福島: [37.75, 140.47], 茨城: [36.34, 140.45],
@@ -54,10 +52,9 @@ const CAPITAL = {
   香川: [34.34, 134.04], 愛媛: [33.84, 132.77], 高知: [33.56, 133.53], 福岡: [33.61, 130.42],
   佐賀: [33.25, 130.3], 長崎: [32.74, 129.87], 熊本: [32.79, 130.74], 大分: [33.24, 131.61],
   宮崎: [31.91, 131.42], 鹿児島: [31.56, 130.56], 沖縄: [26.21, 127.68],
-  西表島: [24.33, 123.81], 小笠原諸島: [27.08, 142.2], 北方領土: [44.05, 145.95],
 };
 
-// ---- GeoJSON を読み、ポリゴンごとに県番号（離島は離島の番号）と座標系を決める ----
+// ---- GeoJSON を読み、ポリゴンごとに県番号と座標系を決める ----
 const idxOf = (name) => {
   const i = PREF_TILES.findIndex((p) => p.name === name);
   if (i < 0) throw new Error('県が見つからない: ' + name);
@@ -84,7 +81,7 @@ const bboxOf = (ring) => {
 const inBox = (bb, lon, lat) => bb[0] >= lon[0] && bb[1] <= lon[1] && bb[2] >= lat[0] && bb[3] <= lat[1];
 
 const geo = JSON.parse(fs.readFileSync(src, 'utf8'));
-const polys = { main: [], 八重山: [], 沖縄本島: [], 小笠原: [] };
+const polys = { main: [], 沖縄本島: [] };
 for (const f of geo.features) {
   const pref = shortName(f.properties.nam_ja);
   const list = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
@@ -95,18 +92,13 @@ for (const f of geo.features) {
     let set = 'main';
     let idx = idxOf(pref);
     if (pref === '沖縄') {
-      const box = INSETS.find((s) => s.name !== '小笠原' && inBox(bb, s.lon, s.lat));
-      if (!box) continue; // 宮古島・大東諸島などはめ込み図の外は省く
+      const box = INSETS.find((s) => inBox(bb, s.lon, s.lat));
+      if (!box) continue; // 八重山・宮古島・大東諸島などはめ込み図の外は省く
       set = box.name;
-      if (bb[0] >= 123.6 && bb[1] <= 124.0 && bb[2] >= 24.2 && bb[3] <= 24.5) idx = idxOf('西表島');
     } else if (pref === '東京' && bb[3] < 30) {
-      if (!inBox(bb, [142.05, 142.32], [26.55, 27.2])) continue; // 父島・母島のまわりだけ
-      set = '小笠原';
-      idx = idxOf('小笠原諸島');
+      continue; // 小笠原は省く
     } else if (pref === '鹿児島' && bb[3] < 30.0) {
       continue; // 奄美などは本土の範囲の外
-    } else if (pref === '北海道' && bb[0] > 145.3) {
-      idx = idxOf('北方領土');
     }
     polys[set].push({ idx, rings, bb });
   }

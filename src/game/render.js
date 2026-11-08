@@ -140,7 +140,7 @@ function drawCastle(ctx, x, y, flag) {
   r(flag, 23, 0, 5, 4);
 }
 
-// はめ込み図（沖縄・小笠原）のまわりに点線の枠を描く。枠は図の 1 マス外側のマスの真ん中を通る
+// はめ込み図（沖縄本島）のまわりに点線の枠を描く。枠は図の 1 マス外側のマスの真ん中を通る
 function drawInsetFrame(r, mx, my) {
   const C = 'rgba(255,255,255,.45)';
   for (const [fx, fy, fw, fh] of INSET_FRAMES) {
