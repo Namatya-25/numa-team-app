@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel, stats, need } from '../data/prefectures.js';
 import { KAKEI_SOURCE } from '../data/kakei.js';
-import { MW, MH, T, grid, own, castles, ownAt } from '../game/world.js';
+import { MW, MH, T, grid, own, castles, signs, ownAt } from '../game/world.js';
 import { INSET_FRAMES } from '../data/japanMap.js';
 import { GRASS_COL } from '../game/render.js';
 import { nextOf } from '../game/save.js';
@@ -13,7 +13,7 @@ const ROOT = ['強さ', '仲間', '地図', '図鑑', 'データ', '閉じる'];
 
 // データ図鑑：記録した県のデータを1県ずつ見る（左右でページ送り）
 function Zukan({ pages, page }) {
-  if (!pages.length) return <p style={{ margin: 0 }}>まだ記録がない。初めての県に入ると、その県のデータが記録される。</p>;
+  if (!pages.length) return <p style={{ margin: 0 }}>まだ記録がない。道ばたの看板を調べると、その県のデータが記録される。</p>;
   const pg = pages[Math.min(page, pages.length - 1)];
   return (
     <div className="zukan">
@@ -51,6 +51,11 @@ function MiniMap({ save }) {
     c.strokeStyle = 'rgba(255,255,255,.6)';
     c.lineWidth = 1;
     INSET_FRAMES.forEach(([x, y, w, h]) => c.strokeRect((x - 1) * s + s / 2, (y - 1) * s + s / 2, (w + 1) * s, (h + 1) * s)); // はめ込み図の枠
+    // 看板：読んだ=茶色、まだ=水色
+    signs.forEach((g) => {
+      c.fillStyle = (save.learned || []).includes(g.pref) ? '#8b5a2b' : '#5fd3f2';
+      c.fillRect(g.x * s, g.y * s, s, s);
+    });
     castles.forEach((k, i) => {
       c.fillStyle = save.cleared.includes(i) ? '#e0482f' : i === nid ? '#f2c14e' : '#ffffff';
       c.fillRect(k.x * s - 1, k.y * s - 1, s * 2 + 2, s * 2 + 2); // 城は 2x2 マス
@@ -193,6 +198,7 @@ export default function Menu({ save, setSave, onClose }) {
           <div><span className="sw" style={{ background: '#e0482f' }} />制覇済み</div>
           <div><span className="sw" style={{ background: '#f2c14e' }} />次の目的地</div>
           <div><span className="sw" style={{ background: '#fff' }} />未到達</div>
+          <div><span className="sw" style={{ background: '#5fd3f2' }} />まだ読んでいない看板</div>
           <div style={{ marginTop: '.5em' }}>次：{nid < REGIONS.length ? REGIONS[nid].name : '完全制覇！'}</div>
         </div>
       </div>

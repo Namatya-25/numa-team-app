@@ -33,12 +33,13 @@ export function factLine(pref, item) {
   return `${KAKEI[item].label}　${yen(KAKEI[item].values[pref])}（全国${r}位${r > 1 ? `・1位は${top}` : ''}）`;
 }
 
-/** 県に初めて入ったときの会話 */
-export function learnLines(pref) {
+/** 看板を調べたときの会話。isNew なら図鑑に記録したことも伝える */
+export function learnLines(pref, isNew) {
   const items = FACTS[pref] || [];
   return [
-    `〔データ図鑑〕${pref}のデータを記録した！\n1世帯が1年に使うお金（県庁所在地）`,
+    `看板に${pref}のデータが書いてある。\n「1世帯が1年に使うお金（県庁所在地）」`,
     items.map((it) => '・' + factLine(pref, it)).join('\n'),
+    ...(isNew ? [`${pref}のデータを図鑑に記録した！`] : []),
   ];
 }
 

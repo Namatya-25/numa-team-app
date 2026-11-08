@@ -2,11 +2,12 @@
 // 陸地の形と県の範囲は src/data/japanMap.js（scripts/build-map.mjs で生成）にある
 import { REGIONS, PREF_TILES } from '../data/prefectures.js';
 import { MAP_ROWS, MAP_CHARS, NODES } from '../data/japanMap.js';
+import { hasFacts } from './quiz.js';
 
 export const MW = MAP_ROWS[0].length;
 export const MH = MAP_ROWS.length;
 
-export const T = { SEA: 0, GRASS: 1, FOREST: 2, MOUNT: 3, TOWN: 4, ROAD: 5, BRIDGE: 6, CASTLE: 7 };
+export const T = { SEA: 0, GRASS: 1, FOREST: 2, MOUNT: 3, TOWN: 4, ROAD: 5, BRIDGE: 6, CASTLE: 7, SIGN: 8 };
 
 // 座標から決まる疑似乱数（毎回同じ地形になる）
 const rng = (x, y, s) => {
@@ -142,8 +143,36 @@ castles.forEach((c) => {
   }
 });
 
+// 4. データの看板：データのある県の県庁所在地から近い、道に面したマスに1本立てる（城と同じく通れない）
+export const signs = []; // { x, y, pref }
+PREF_TILES.forEach((t, i) => {
+  if (!hasFacts(t.name) || !NODES[i]) return;
+  const [nx, ny] = NODES[i];
+  const seen = new Set([ny * MW + nx]);
+  const queue = [[nx, ny]];
+  while (queue.length) {
+    const [x, y] = queue.shift();
+    const g = grid[y][x];
+    const nextToRoad = STEPS.some(([dx, dy]) => inb(x + dx, y + dy) && grid[y + dy][x + dx] === T.ROAD);
+    if (pref[y][x] === i && g >= T.GRASS && g <= T.TOWN && nextToRoad) {
+      grid[y][x] = T.SIGN;
+      signs.push({ x, y, pref: t.name });
+      return;
+    }
+    for (const [dx, dy] of STEPS) {
+      const k = (y + dy) * MW + (x + dx);
+      if (inb(x + dx, y + dy) && pref[y + dy][x + dx] >= 0 && !seen.has(k)) {
+        seen.add(k);
+        queue.push([x + dx, y + dy]);
+      }
+    }
+  }
+});
+
 export const walkable = (x, y) => inb(x, y) && grid[y][x] >= T.GRASS && grid[y][x] <= T.BRIDGE;
 export const castleAt = (x, y) => (inb(x, y) && grid[y][x] === T.CASTLE ? own[y][x] : -1);
+/** そのマスの看板の県名（看板でなければ null） */
+export const signAt = (x, y) => (inb(x, y) && grid[y][x] === T.SIGN ? signs.find((s) => s.x === x && s.y === y).pref : null);
 export const ownAt = (x, y) => (inb(x, y) ? own[y][x] : -1);
 /** そのマスの県名（海なら null）。名前は prefectures.js の RAW の書き方 */
 export const prefAt = (x, y) => (inb(x, y) && pref[y][x] >= 0 ? PREF_TILES[pref[y][x]].name : null);

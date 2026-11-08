@@ -2,8 +2,8 @@
 // ありがとう
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel } from './data/prefectures.js';
-import { castles, ownAt, prefAt, DIRS, START } from './game/world.js';
-import { hasFacts, learnLines, quizFor } from './game/quiz.js';
+import { castles, ownAt, DIRS, START } from './game/world.js';
+import { learnLines, quizFor } from './game/quiz.js';
 import { fresh, hasSaved, loadSave, persist, nextOf, rewardFor } from './game/save.js';
 import { KEYMAP, dispatch, held, press, release } from './game/input.js';
 import Field from './components/Field.jsx';
@@ -27,11 +27,6 @@ export default function App() {
   const [battle, setBattle] = useState(null);
   const [area, setArea] = useState(null);
   const lastArea = useRef(ownAt(save.pos.x, save.pos.y));
-  // 図鑑に記録した県。歩くたびに見るので ref にも持つ（開発者用のリセットにも追従する）
-  const learnedRef = useRef(save.learned || []);
-  useEffect(() => {
-    learnedRef.current = save.learned || [];
-  }, [save.learned]);
   const [narrow, setNarrow] = useState(() => window.innerWidth < 600);
 
   const vw = narrow ? 11 : 15; // 画面に映るタイル数
@@ -148,18 +143,17 @@ export default function App() {
       lastArea.current = o;
       setArea({ name: REGIONS[o].name, n: Date.now() });
     }
-    // 初めて入った県なら、その県のデータを図鑑に記録して読み上げる
-    const pf = prefAt(x, y);
-    if (pf && hasFacts(pf) && !learnedRef.current.includes(pf)) {
-      learnedRef.current = [...learnedRef.current, pf];
-      setSave((s) => ({ ...s, learned: [...(s.learned || []), pf] }));
-      talk(learnLines(pf));
-    }
+  }
+
+  // 看板を調べたとき：その県のデータを読み上げて、初めてなら図鑑に記録する
+  function onSign(pf) {
+    const isNew = !(save.learned || []).includes(pf);
+    if (isNew) setSave((s) => ({ ...s, learned: [...(s.learned || []), pf] }));
+    talk(learnLines(pf, isNew));
   }
 
   function newGame() {
-    const f = { ...fresh(), learned: ['北海道'] };
-    learnedRef.current = f.learned;
+    const f = fresh();
     setSave(f);
     persist(f);
     hadSave.current = true;
@@ -170,8 +164,8 @@ export default function App() {
       '全国のご当地キャラたちが自分の土地を守るため、\n一斉に乱を起こした！',
       `旅人${HERO}よ。本土の7地方と離島、${REGIONS.length}の城を制覇し、\n日本のすみずみまで旅するのだ！`,
       '矢印キーで移動。Zキーで調べる・メニュー。\n城にぶつかると話しかけられる。',
-      ...learnLines('北海道'),
-      '初めての県に入ると、データが図鑑に記録される。\nボスはそのデータでクイズを出してくるぞ！',
+      '道ばたの看板を調べると、その県のデータが読める。\n読んだデータはメニューの「図鑑」に記録される。',
+      'ボスはそのデータでクイズを出してくるぞ！\nまずは近くの看板を探してみよう。',
     ]);
   }
 
@@ -186,6 +180,7 @@ export default function App() {
             vh={vh}
             onMove={onMove}
             onCastle={onCastle}
+            onSign={onSign}
             onEncounter={encounter ? (pid) => startBattle({ pid, wild: true }) : null}
             onMenu={() => setMenu(true)}
           />
