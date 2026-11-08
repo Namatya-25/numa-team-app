@@ -25,7 +25,6 @@ export default function App() {
   const dialogId = useRef(0);
   const [menu, setMenu] = useState(false);
   const [battle, setBattle] = useState(null);
-  const [area, setArea] = useState(null);
   const lastArea = useRef(ownAt(save.pos.x, save.pos.y));
   const [narrow, setNarrow] = useState(() => window.innerWidth < 600);
 
@@ -145,7 +144,6 @@ export default function App() {
     const o = ownAt(x, y);
     if (o >= 0 && o !== lastArea.current) {
       lastArea.current = o;
-      setArea({ name: REGIONS[o].name, n: Date.now() });
     }
   }
 
@@ -199,9 +197,9 @@ export default function App() {
           <Battle key={battle.key} foe={battle.foe} save={save} reward={battle.reward} onEnd={endBattle} />
         )}
         {mode === 'title' && <Title hasSave={hadSave.current} onNew={newGame} onContinue={() => setMode('field')} />}
-        {/* 左上：今いる地方の名前（いつも出す。新しい地方に入ったときだけ少し目立たせる） */}
+        {/* 左上：今いる地方の名前（いつも出す） */}
         {mode === 'field' && !dialog && !menu && hereRegion && (
-          <div key={area ? area.n : 'start'} className={'win area' + (area ? ' flash' : '')}>
+          <div className="win area">
             {hereRegion.name}
           </div>
         )}
