@@ -21,6 +21,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
   const allies = b.units.filter((u) => u.side === 'ally');
   const enemy = b.enemy;
   const P = REGIONS[foe.pid];
+  const isLargeBossArt = (P.id === 0 || P.id === 1) && !foe.wild;
 
   useEffect(() => {
     // StrictMode で2回実行されても、古い方の進行は止まるようにする
@@ -369,7 +370,10 @@ export default function Battle({ foe, save, reward, onEnd }) {
       </div>
 
       <div className={'scene ' + ELEM[P.elem].cls}>
-        <div key={'b' + b.blink} className={'foe' + (enemy.hp <= 0 ? ' gone' : b.blink ? ' blink' : '')}>
+        <div
+          key={'b' + b.blink}
+          className={'foe' + (enemy.hp <= 0 ? ' gone' : b.blink ? ' blink' : '') + (isLargeBossArt ? ' foe-large-art' : '')}
+        >
           <div
             className={'hpbar enemy-hp' + (enemy.hp / enemy.max < 0.3 ? ' low' : enemy.hp / enemy.max < 0.5 ? ' mid' : '')}
             role="progressbar"
@@ -380,12 +384,13 @@ export default function Battle({ foe, save, reward, onEnd }) {
           >
             <span className="hpbar-fill" style={{ width: `${(enemy.hp / enemy.max) * 100}%` }} />
           </div>
-          {P.id === 0 && !foe.wild ? (
+          {/* 北海道と東北の城ボスは専用PNGに差し替え、野生戦では従来のSVGを表示する */}
+          {isLargeBossArt ? (
             <img
               className="enemy-mascot"
-              src="/hokkaido-bear-mascot.png"
+              src={P.id === 0 ? '/hokkaido-bear-mascot.png' : '/tohoku-gyutan-monster.png'}
               alt={P.chara}
-              style={{ width: '60cqw' }}
+              style={{ width: '130cqw' }}
             />
           ) : (
             <PixelMascot p={P} width={foe.wild ? '20cqw' : '30cqw'} />

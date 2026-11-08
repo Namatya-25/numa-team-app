@@ -105,13 +105,16 @@ button{font:inherit;color:inherit}
 .scene.machi::before{height:60%;background:#3a2f3f;opacity:.7;clip-path:polygon(0 100%,0 40%,8% 40%,8% 20%,16% 20%,16% 50%,24% 50%,24% 10%,30% 10%,30% 45%,40% 45%,40% 30%,50% 30%,50% 55%,58% 55%,58% 15%,66% 15%,66% 48%,76% 48%,76% 25%,84% 25%,84% 52%,92% 52%,92% 35%,100% 35%,100% 100%)}
 .foe{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:.3em;height:100%;min-height:0;transition:opacity .7s}
 .enemy-hp{width:min(36cqw,18em)}
+/* 大きな専用画像ではHPバーをイラストの右下に重ねる */
+.foe.foe-large-art .enemy-hp{position:absolute;right:calc(10% + 18cqw);bottom:4%;z-index:2;width:min(18cqw,9em)}
 .foe.blink{animation:fblink .42s steps(1)}
 @keyframes fblink{0%,50%{opacity:0}25%,75%,100%{opacity:1}}
 .foe.gone{opacity:0}
-.foe canvas{display:block;image-rendering:pixelated}
-.foe .enemy-mascot{display:block;height:auto;image-rendering:pixelated}
+/* 戦闘キャラのCanvasと専用PNGを同じブロック表示・ドット表示にする */
+.foe canvas,.foe img{display:block;image-rendering:pixelated}
 /* 敵の絵が枠より大きいときは縮めて、上の HP バーが切れないようにする（縦横比はそのまま） */
-.foe canvas{flex:0 1 auto;min-height:0;max-height:100%;object-fit:contain;object-position:bottom}
+/* 専用PNGもCanvasと同じ制約で枠内に収め、縦横比を保つ */
+.foe canvas,.foe img{flex:0 1 auto;min-height:0;max-height:100%;object-fit:contain;object-position:bottom}
 .foe .hpbar{flex:none}
 .bottom{min-height:31%;display:flex;gap:.5em;align-items:stretch}
 .msg{flex:1;min-width:0}
