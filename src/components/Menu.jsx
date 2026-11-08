@@ -1,4 +1,4 @@
-// フィールドのメニュー（つよさ・なかま・ちず・図鑑・データ）
+// フィールドのメニュー（強さ・仲間・地図・データ図鑑・都市データ）
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel, stats, need } from '../data/prefectures.js';
 import { MW, MH, T, grid, own, castles, signs, ownAt } from '../game/world.js';
@@ -8,7 +8,7 @@ import { nextOf } from '../game/save.js';
 import { zukanPages, signKey, SIGN_KINDS, SOURCES, ZUKAN_TOTAL } from '../game/quiz.js';
 import { useInput } from '../game/input.js';
 
-const ROOT = ['強さ', '仲間', '地図', '図鑑', 'データ', '閉じる'];
+const ROOT = ['強さ', '仲間', '地図', 'データ図鑑', '都市データ', '閉じる'];
 
 // データ図鑑：記録した県のデータを1県ずつ見る（左右でページ送り）
 function Zukan({ pages, page }) {
@@ -137,8 +137,8 @@ export default function Menu({ save, setSave, onClose }) {
       else if (k === 'down' || k === 'right') setPartyCur((v) => Math.min(mates.length - 1, v + 1));
       else if (k === 'a') toggle(mates[partyCur]);
       else if (k === 'b') setView(null);
-    } else if (view === '図鑑' && (k === 'left' || k === 'up')) setZPage((v) => Math.max(0, v - 1));
-    else if (view === '図鑑' && (k === 'right' || k === 'down')) setZPage((v) => Math.min(zPages.length - 1, v + 1));
+    } else if (view === 'データ図鑑' && (k === 'left' || k === 'up')) setZPage((v) => Math.max(0, v - 1));
+    else if (view === 'データ図鑑' && (k === 'right' || k === 'down')) setZPage((v) => Math.min(zPages.length - 1, v + 1));
     else if (k === 'a' || k === 'b') setView(null);
   });
 
@@ -209,9 +209,9 @@ export default function Menu({ save, setSave, onClose }) {
         </div>
       </div>
     );
-  } else if (view === '図鑑') {
+  } else if (view === 'データ図鑑') {
     body = <Zukan pages={zPages} page={zPage} />;
-  } else if (view === 'データ') {
+  } else if (view === '都市データ') {
     body = <DataView p={dataPref} />;
   }
 

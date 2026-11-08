@@ -288,7 +288,7 @@ export function signLines(pref, kind, isNew) {
   return [
     `〔${kind}の看板〕${pref}\n${SIGN_KINDS[kind].note}`,
     items.map((it) => '・' + factLine(pref, it)).join('\n'),
-    ...(isNew ? [`${pref}の「${kind}」のデータを図鑑に記録した！`] : []),
+    ...(isNew ? [`${pref}の「${kind}」のデータをデータ図鑑に記録した！`] : []),
   ];
 }
 
