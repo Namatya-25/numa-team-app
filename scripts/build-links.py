@@ -22,15 +22,30 @@ PREFS = ('北海道 青森 岩手 宮城 秋田 山形 福島 茨城 栃木 群�
 COLUMNS = {'TOTAL_GUEST_COUNT': 'total', 'STAY_GUEST_COUNT_FOREIGN': 'foreign'}
 
 
+def col_letter(n):
+    s = ''
+    while n:
+        n, r = divmod(n - 1, 26)
+        s = chr(65 + r) + s
+    return s
+
+
 def main(path):
     out = {v: {} for v in COLUMNS.values()}
+    rows = {}  # 県 → その県の行が、表計算ソフトで開いたときに何行目か（1行目は見出し）
     with open(path, encoding='utf-8-sig', newline='') as fp:
-        for row in csv.DictReader(fp):
-            if row['YEAR'] != YEAR:
-                continue
-            pref = PREFS[int(row['PREFECTURE_CODE']) - 1]
-            for col, key in COLUMNS.items():
-                out[key][pref] = int(row[col])
+        table = list(csv.reader(fp))
+    header = table[0]
+    cols = {key: {'name': col, 'letter': col_letter(header.index(col) + 1), 'index': header.index(col) + 1}
+            for col, key in COLUMNS.items()}
+    for line, values in enumerate(table[1:], start=2):
+        row = dict(zip(header, values))
+        if row['YEAR'] != YEAR:
+            continue
+        pref = PREFS[int(row['PREFECTURE_CODE']) - 1]
+        rows[pref] = line
+        for col, key in COLUMNS.items():
+            out[key][pref] = int(row[col])
     for key, vals in out.items():
         if len(vals) != 47:
             sys.exit(f'{key} の47都道府県分のデータが見つからない')
@@ -45,6 +60,10 @@ def main(path):
         "export const LINKS_SOURCE = '国土交通省 Project LINKS「観光統計データ」';",
         '',
         'export const LINKS = ' + json.dumps(out, ensure_ascii=False, indent=2) + ';',
+        '',
+        '// CSV を表計算ソフトで開いたときの場所。rows = 県ごとの行番号、cols = 列の記号と左から何番目か',
+        'export const LINKS_ROWS = ' + json.dumps(rows, ensure_ascii=False) + ';',
+        'export const LINKS_COLS = ' + json.dumps(cols, ensure_ascii=False) + ';',
         '',
     ]
     dst = os.path.join(os.path.dirname(__file__), '..', 'src', 'data', 'links.js')

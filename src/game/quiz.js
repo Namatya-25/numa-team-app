@@ -4,7 +4,7 @@
 import { KAKEI, KAKEI_SOURCE } from '../data/kakei.js';
 import { SUGATA, SUGATA_SOURCE } from '../data/sugata.js';
 import { PREF_TILES } from '../data/prefectures.js';
-import { LINKS, LINKS_URL, LINKS_FILE, LINKS_YEAR, LINKS_SOURCE } from '../data/links.js';
+import { LINKS, LINKS_URL, LINKS_FILE, LINKS_YEAR, LINKS_SOURCE, LINKS_ROWS, LINKS_COLS } from '../data/links.js';
 
 /** 看板の種類。col は看板の板の色、note は看板の見出しに出す説明 */
 const MONEY = '1世帯が1年に使うお金（県庁所在地）';
@@ -449,7 +449,6 @@ export function quizFor(regionId) {
 
 // ---- 特別データ攻撃（国土交通省 Project LINKS のサイトで調べないと解けない問題） ----
 // 各地方のボス戦で1回だけ出る。正解はデータから計算するので、データを作り直しても正解はずれない。
-const PREF_ORDER = PREF_TILES.slice(0, 47).map((t) => t.name); // 県の番号（PREFECTURE_CODE）は 1 = 北海道 … 47 = 沖縄
 const LINKS_METRIC = {
   total: { col: 'TOTAL_GUEST_COUNT', name: '延べ宿泊者数（日本人と外国人の合計）' },
   foreign: { col: 'STAY_GUEST_COUNT_FOREIGN', name: '外国人の延べ宿泊者数' },
@@ -475,10 +474,12 @@ export function linksQuizFor(regionId) {
   if (!spec) return null;
   const m = LINKS_METRIC[spec.metric];
   const vals = LINKS[spec.metric];
-  const code = (p) => `${p}=${PREF_ORDER.indexOf(p) + 1}`;
+  // 表計算ソフトで開いたときの場所：列（C列など）と、県ごとの行番号
+  const col = LINKS_COLS[spec.metric];
+  const at = (p) => `${p}は${LINKS_ROWS[p]}行目`;
   const base = {
     link: LINKS_URL,
-    hint: `「${LINKS_FILE}」を開いて、YEAR が ${LINKS_YEAR} の行の ${m.col}（${m.name}）を見よう。`,
+    hint: `「${LINKS_FILE}」をダウンロードして表計算ソフトで開き、${col.letter}列（左から${col.index}番目の ${col.name}＝${m.name}）を見よう。`,
     wide: false,
     special: true,
   };
@@ -489,7 +490,7 @@ export function linksQuizFor(regionId) {
     return {
       ...base,
       q: `${LINKS_YEAR}年に${spec.amount}に泊まった外国人は、のべ何人泊？`,
-      hint: base.hint + `PREFECTURE_CODE は県の番号（${code(spec.amount)}）。`,
+      hint: base.hint + `${LINKS_YEAR}年の${at(spec.amount)}。`,
       choices,
       answer: man(v),
       reveal: `正解は${man(v)}！（${v.toLocaleString()}人泊）`,
@@ -500,7 +501,8 @@ export function linksQuizFor(regionId) {
   return {
     ...base,
     q: `${LINKS_YEAR}年、${spec.ask}${m.name}がいちばん多い県は？`,
-    hint: base.hint + `PREFECTURE_CODE は県の番号（${spec.choices.map(code).join('、')}）。`,
+    // 正解がわからないように、行番号の順に並べる
+    hint: base.hint + `${LINKS_YEAR}年の行は、${[...spec.choices].sort((a, b) => LINKS_ROWS[a] - LINKS_ROWS[b]).map(at).join('、')}。`,
     choices: shuffle(spec.choices),
     answer: sorted[0],
     reveal: `正解は${sorted[0]}！ ${sorted.map((p) => `${p} ${man(vals[p])}`).join('、')}。`,
