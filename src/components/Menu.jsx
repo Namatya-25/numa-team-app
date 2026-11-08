@@ -6,7 +6,7 @@ import { MW, MH, T, grid, own, castles, signs, ownAt } from '../game/world.js';
 import { INSET_FRAMES } from '../data/japanMap.js';
 import { GRASS_COL } from '../game/render.js';
 import { nextOf } from '../game/save.js';
-import { zukanPages, ZUKAN_TOTAL } from '../game/quiz.js';
+import { zukanPages, signKey, SIGN_KINDS, ZUKAN_TOTAL } from '../game/quiz.js';
 import { useInput } from '../game/input.js';
 
 const ROOT = ['強さ', '仲間', '地図', '図鑑', 'データ', '閉じる'];
@@ -15,17 +15,25 @@ const ROOT = ['強さ', '仲間', '地図', '図鑑', 'データ', '閉じる'];
 function Zukan({ pages, page }) {
   if (!pages.length) return <p style={{ margin: 0 }}>まだ記録がない。道ばたの看板を調べると、その県のデータが記録される。</p>;
   const pg = pages[Math.min(page, pages.length - 1)];
+  const read = pages.reduce((n, p) => n + p.groups.length, 0);
   return (
     <div className="zukan">
       <h3>
-        データ図鑑　{pg.pref}（{pages.length}/{ZUKAN_TOTAL}県）
+        データ図鑑　{pg.pref}（看板 {pg.groups.length}/{pg.total}）　全体 {read}/{ZUKAN_TOTAL}
       </h3>
       <p style={{ margin: '0 0 .3em' }}>1世帯が1年に使うお金（県庁所在地）</p>
-      <ul>
-        {pg.lines.map((l) => (
-          <li key={l}>・{l}</li>
-        ))}
-      </ul>
+      {pg.groups.map((g) => (
+        <div key={g.kind} className="zukan-group">
+          <div className="zukan-kind" style={{ color: SIGN_KINDS[g.kind].col }}>
+            〔{g.kind}〕
+          </div>
+          <ul>
+            {g.lines.map((l) => (
+              <li key={l}>・{l}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
       <p className="hint">
         {pages.length > 1 ? '◀ ▶ でページ送り　' : ''}出典：{KAKEI_SOURCE}
       </p>
@@ -53,7 +61,7 @@ function MiniMap({ save }) {
     INSET_FRAMES.forEach(([x, y, w, h]) => c.strokeRect((x - 1) * s + s / 2, (y - 1) * s + s / 2, (w + 1) * s, (h + 1) * s)); // はめ込み図の枠
     // 看板：読んだ=茶色、まだ=水色
     signs.forEach((g) => {
-      c.fillStyle = (save.learned || []).includes(g.pref) ? '#8b5a2b' : '#5fd3f2';
+      c.fillStyle = (save.learned || []).includes(signKey(g.pref, g.kind)) ? '#8b5a2b' : '#5fd3f2';
       c.fillRect(g.x * s, g.y * s, s, s);
     });
     castles.forEach((k, i) => {

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel } from './data/prefectures.js';
 import { castles, ownAt, DIRS, START } from './game/world.js';
-import { learnLines, quizFor } from './game/quiz.js';
+import { signLines, signKey, quizFor } from './game/quiz.js';
 import { fresh, hasSaved, loadSave, persist, nextOf, rewardFor } from './game/save.js';
 import { KEYMAP, dispatch, held, press, release } from './game/input.js';
 import Field from './components/Field.jsx';
@@ -145,11 +145,12 @@ export default function App() {
     }
   }
 
-  // 看板を調べたとき：その県のデータを読み上げて、初めてなら図鑑に記録する
-  function onSign(pf) {
-    const isNew = !(save.learned || []).includes(pf);
-    if (isNew) setSave((s) => ({ ...s, learned: [...(s.learned || []), pf] }));
-    talk(learnLines(pf, isNew));
+  // 看板を調べたとき：書いてあるデータを読み上げて、初めてなら図鑑に記録する
+  function onSign({ pref, kind }) {
+    const key = signKey(pref, kind);
+    const isNew = !(save.learned || []).includes(key);
+    if (isNew) setSave((s) => ({ ...s, learned: [...(s.learned || []), key] }));
+    talk(signLines(pref, kind, isNew));
   }
 
   function newGame() {
@@ -164,7 +165,8 @@ export default function App() {
       '全国のご当地キャラたちが自分の土地を守るため、\n一斉に乱を起こした！',
       `旅人${HERO}よ。本土の7地方と離島、${REGIONS.length}の城を制覇し、\n日本のすみずみまで旅するのだ！`,
       '矢印キーで移動。Zキーで調べる・メニュー。\n城にぶつかると話しかけられる。',
-      '道ばたの看板を調べると、その県のデータが読める。\n読んだデータはメニューの「図鑑」に記録される。',
+      '道ばたの看板を調べると、その県のデータが読める。\n看板は「食べもの」「おやつ・飲みもの」「くらし」の3種類。',
+      '読んだデータはメニューの「図鑑」に記録される。',
       'ボスはそのデータでクイズを出してくるぞ！\nまずは近くの看板を探してみよう。',
     ]);
   }

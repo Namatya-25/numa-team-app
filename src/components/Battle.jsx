@@ -472,7 +472,7 @@ export default function Battle({ foe, save, reward, onEnd }) {
               <p className="quiz-tag">データ攻撃</p>
               <p>{b.ask.q}</p>
             </div>
-            <div className="win static cmds quiz-opts">
+            <div className={'win static cmds quiz-opts' + (b.ask.wide ? ' wide' : '')}>
               {b.ask.choices.map((c, j) => (
                 <button
                   key={c}
