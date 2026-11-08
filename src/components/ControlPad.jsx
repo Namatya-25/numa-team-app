@@ -1,4 +1,4 @@
-// 画面下の十字キーとA/Bボタン（スマホ・マウス用）
+// 画面下の十字キーとA/Bボタン、メニューボタン（スマホ・マウス用）
 import { dispatch, press, release } from '../game/input.js';
 
 function DirButton({ dir, label }) {
@@ -23,7 +23,8 @@ function DirButton({ dir, label }) {
   );
 }
 
-export default function ControlPad() {
+/** onMenu を渡すと「メニュー」ボタンが出る（フィールドにいるときだけ）。menuOpen なら「閉じる」になる */
+export default function ControlPad({ onMenu, menuOpen }) {
   return (
     <div className="pad">
       <div className="dpad">
@@ -44,6 +45,18 @@ export default function ControlPad() {
         <br />
         メニュー・戻る：X / Esc
       </div>
+      {onMenu && (
+        <button
+          className="menu-btn"
+          aria-label={menuOpen ? 'メニューを閉じる' : 'メニューを開く'}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            onMenu();
+          }}
+        >
+          {menuOpen ? '閉じる' : 'メニュー'}
+        </button>
+      )}
       <div className="ab">
         <button className="b" aria-label="Bボタン" onPointerDown={(e) => { e.preventDefault(); dispatch('b'); }}>
           B

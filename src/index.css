@@ -142,6 +142,8 @@ button{font:inherit;color:inherit}
 .dpad button:active{background:var(--frame-2);color:#fff}
 .dpad .c{background:var(--frame);border-radius:0}
 .ab{display:flex;gap:14px;align-items:center}
+.menu-btn{border:2px solid var(--frame-2);border-radius:999px;background:#000;color:#fff;font-size:16px;padding:10px 18px;cursor:pointer;touch-action:none}
+.menu-btn:active{filter:brightness(1.3)}
 .ab button{border:0;border-radius:50%;font-size:20px;color:#fff;touch-action:none;cursor:pointer}
 .ab .a{width:66px;height:66px;background:var(--shu)}
 .ab .b{width:54px;height:54px;background:var(--frame-2);margin-top:28px}

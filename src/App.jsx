@@ -216,7 +216,10 @@ export default function App() {
         </span>
       </div>
 
-      <ControlPad />
+      <ControlPad
+        onMenu={mode === 'field' && !dialog ? () => setMenu((v) => !v) : null}
+        menuOpen={menu}
+      />
 
       {import.meta.env.DEV && (
         <DevPanel
