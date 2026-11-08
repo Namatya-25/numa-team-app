@@ -175,6 +175,10 @@ export default function App() {
     ]);
   }
 
+  // 今いる地方（海や橋の上なら、最後にいた地方）
+  const hereId = ownAt(save.pos.x, save.pos.y);
+  const hereRegion = REGIONS[hereId >= 0 ? hereId : lastArea.current];
+
   return (
     <div className="console">
       <div className="screen" style={{ aspectRatio: `${vw} / ${vh}` }}>
@@ -195,9 +199,10 @@ export default function App() {
           <Battle key={battle.key} foe={battle.foe} save={save} reward={battle.reward} onEnd={endBattle} />
         )}
         {mode === 'title' && <Title hasSave={hadSave.current} onNew={newGame} onContinue={() => setMode('field')} />}
-        {mode === 'field' && area && !dialog && !menu && (
-          <div key={area.n} className="win area">
-            {area.name}
+        {/* 左上：今いる地方の名前（いつも出す。新しい地方に入ったときだけ少し目立たせる） */}
+        {mode === 'field' && !dialog && !menu && hereRegion && (
+          <div key={area ? area.n : 'start'} className={'win area' + (area ? ' flash' : '')}>
+            {hereRegion.name}
           </div>
         )}
         {mode === 'field' && menu && <Menu save={save} setSave={setSave} onClose={() => setMenu(false)} />}

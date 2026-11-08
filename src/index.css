@@ -49,8 +49,11 @@ button{font:inherit;color:inherit}
 .dlg{left:3%;right:3%;bottom:3%;min-height:30%;cursor:pointer}
 .dlg p{margin:0;white-space:pre-wrap}
 .choice{right:3%;bottom:calc(3% + 30% + .6em)}
-.area{top:3%;left:3%;animation:fadeout 2.6s forwards}
-@keyframes fadeout{0%,75%{opacity:1}100%{opacity:0}}
+.area{top:3%;left:3%;pointer-events:none}
+/* 新しい地方に入ったときだけ、少し大きく光らせる */
+.area.flash{animation:areaflash 1.2s ease-out}
+@keyframes areaflash{0%{transform:scale(1.25);color:var(--kin)}100%{transform:scale(1);color:#fff}}
+.area{transform-origin:left top}
 
 /* タイトル */
 .title{position:absolute;inset:0;background:rgba(0,0,0,.62);display:grid;align-content:center;justify-items:center;gap:4cqw;text-align:center;padding:4%}
