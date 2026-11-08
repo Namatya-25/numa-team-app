@@ -37,6 +37,7 @@ export function initBattle(foe, save) {
     lines: [], seq: 0, // メッセージ
     blink: 0, shake: 0, // 演出
     bento: 3,
+    fleeTries: 0, // 「逃げる」を選んだ回数（2回目は必ず成功）
     phase: 'intro', // intro → input → exec → (input …) → end
     idx: 0, cur: 0, plans: [],
     waitA: null,
