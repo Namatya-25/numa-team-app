@@ -38,7 +38,7 @@ export function initBattle(foe, save) {
     lines: [], seq: 0, // メッセージ
     blink: 0, shake: 0, // 演出
     bento: 3,
-    quiz: foe.wild ? [] : quizFor(foe.pid), // ボスの「データ攻撃」の問題
+    quiz: quizFor(foe.pid), // 「データ攻撃」の問題（ボスも雑魚敵も、そのエリアの看板から出す）
     qi: 0, enemyTurns: 0, ask: null,
     fleeTries: 0, // 「逃げる」を選んだ回数（2回目は必ず成功）
     phase: 'intro', // intro → input → exec → (input …) → end
