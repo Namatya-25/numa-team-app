@@ -201,6 +201,19 @@ export default function App() {
           </div>
         )}
         {mode === 'field' && menu && <Menu save={save} setSave={setSave} onClose={() => setMenu(false)} />}
+        {mode === 'field' && !menu && !dialog && (
+          <button
+            className="screen-menu"
+            aria-label="メニューを開く"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenu(true);
+            }}
+          >
+            メニュー
+          </button>
+        )}
         {dialog && mode !== 'battle' && <Dialog key={dialog.id} d={dialog} onClose={() => setDialog(null)} />}
       </div>
 
@@ -216,10 +229,7 @@ export default function App() {
         </span>
       </div>
 
-      <ControlPad
-        onMenu={mode === 'field' && !dialog ? () => setMenu((v) => !v) : null}
-        menuOpen={menu}
-      />
+      <ControlPad />
 
       {import.meta.env.DEV && (
         <DevPanel
