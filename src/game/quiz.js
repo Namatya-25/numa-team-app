@@ -4,6 +4,7 @@
 import { KAKEI, KAKEI_SOURCE } from '../data/kakei.js';
 import { SUGATA, SUGATA_SOURCE } from '../data/sugata.js';
 import { PREF_TILES } from '../data/prefectures.js';
+import { LINKS, LINKS_URL, LINKS_FILE, LINKS_YEAR, LINKS_SOURCE } from '../data/links.js';
 
 /** 看板の種類。col は看板の板の色、note は看板の見出しに出す説明 */
 const MONEY = '1世帯が1年に使うお金（県庁所在地）';
@@ -13,7 +14,7 @@ export const SIGN_KINDS = {
   'しぜん・まち': { col: '#8fd17a', note: '都道府県のデータ（気温・雨・日照は県庁所在地）' },
   人口: { col: '#c3a6f0', note: '都道府県のデータ' },
 };
-export const SOURCES = [KAKEI_SOURCE, SUGATA_SOURCE];
+export const SOURCES = [KAKEI_SOURCE, SUGATA_SOURCE, LINKS_SOURCE];
 
 /*
  * クイズと看板で使うデータ。1品目 = {
@@ -444,4 +445,64 @@ export function quizFor(regionId) {
     for (const l of lists) if (l[i]) out.push(l[i]);
   }
   return out;
+}
+
+// ---- 特別データ攻撃（国土交通省 Project LINKS のサイトで調べないと解けない問題） ----
+// 各地方のボス戦で1回だけ出る。正解はデータから計算するので、データを作り直しても正解はずれない。
+const PREF_ORDER = PREF_TILES.slice(0, 47).map((t) => t.name); // 県の番号（PREFECTURE_CODE）は 1 = 北海道 … 47 = 沖縄
+const LINKS_METRIC = {
+  total: { col: 'TOTAL_GUEST_COUNT', name: '延べ宿泊者数（日本人と外国人の合計）' },
+  foreign: { col: 'STAY_GUEST_COUNT_FOREIGN', name: '外国人の延べ宿泊者数' },
+};
+// 地方ごとの問題：metric = どの列を見るか、choices = 選択肢の県（正解はこの中でいちばん多い県）
+const LINKS_Q = {
+  0: { metric: 'foreign', amount: '北海道' },
+  1: { metric: 'foreign', ask: '東北で', choices: ['宮城', '青森', '岩手', '福島'] },
+  2: { metric: 'total', ask: '関東で、東京をのぞいて', choices: ['千葉', '神奈川', '栃木', '群馬'] },
+  3: { metric: 'foreign', ask: '中部で', choices: ['愛知', '静岡', '長野', '山梨'] },
+  4: { metric: 'foreign', ask: '近畿で、大阪と京都をのぞいて', choices: ['兵庫', '和歌山', '奈良', '滋賀'] },
+  5: { metric: 'foreign', ask: '中国・四国で、広島をのぞいて', choices: ['香川', '岡山', '愛媛', '山口'] },
+  6: { metric: 'total', ask: '九州・沖縄で', choices: ['沖縄', '福岡', '鹿児島', '熊本'] },
+};
+const man = (n) => {
+  const m = Math.round(n / 10000);
+  return m >= 10000 ? `約${Math.floor(m / 10000)}億${m % 10000 ? (m % 10000).toLocaleString() + '万' : ''}人泊` : `約${m.toLocaleString()}万人泊`;
+};
+
+/** その地方の特別データ攻撃の問題（なければ null） */
+export function linksQuizFor(regionId) {
+  const spec = LINKS_Q[regionId];
+  if (!spec) return null;
+  const m = LINKS_METRIC[spec.metric];
+  const vals = LINKS[spec.metric];
+  const code = (p) => `${p}=${PREF_ORDER.indexOf(p) + 1}`;
+  const base = {
+    link: LINKS_URL,
+    hint: `「${LINKS_FILE}」を開いて、YEAR が ${LINKS_YEAR} の行の ${m.col}（${m.name}）を見よう。`,
+    wide: false,
+    special: true,
+  };
+  if (spec.amount) {
+    // 値当て：本物と、0.1倍・3倍・10倍のニセモノ
+    const v = vals[spec.amount];
+    const choices = [v, v * 0.1, v * 3, v * 10].sort((a, b) => a - b).map(man);
+    return {
+      ...base,
+      q: `${LINKS_YEAR}年に${spec.amount}に泊まった外国人は、のべ何人泊？`,
+      hint: base.hint + `PREFECTURE_CODE は県の番号（${code(spec.amount)}）。`,
+      choices,
+      answer: man(v),
+      reveal: `正解は${man(v)}！（${v.toLocaleString()}人泊）`,
+    };
+  }
+  const sorted = [...spec.choices].sort((a, b) => vals[b] - vals[a]);
+  if (vals[sorted[0]] === vals[sorted[1]]) return null;
+  return {
+    ...base,
+    q: `${LINKS_YEAR}年、${spec.ask}${m.name}がいちばん多い県は？`,
+    hint: base.hint + `PREFECTURE_CODE は県の番号（${spec.choices.map(code).join('、')}）。`,
+    choices: shuffle(spec.choices),
+    answer: sorted[0],
+    reveal: `正解は${sorted[0]}！ ${sorted.map((p) => `${p} ${man(vals[p])}`).join('、')}。`,
+  };
 }
