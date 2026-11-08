@@ -62,6 +62,16 @@
 - 食べもの・おやつ・飲みもの・くらし：総務省統計局「家計調査（二人以上の世帯）品目別都道府県庁所在市ランキング（2023年～2025年平均）」の1世帯あたり年間支出金額。県の値はその県の県庁所在市の値です（北海道は札幌市、東京は東京都区部）。`scripts/build-kakei.py` が統計局の Excel から `src/data/kakei.js` を作ります。
 - しぜん・まち：総務省統計局「社会生活統計指標 －都道府県の指標－ 2026」（統計でみる都道府県のすがた）。気温・降水量・日照時間は県庁所在地で測った値です。`scripts/build-sugata.py` が e-Stat の Excel から `src/data/sugata.js` を作ります（`pip install xlrd` が必要）。
 
+### オープンデータの URL
+
+| 看板 | 統計 | URL |
+| --- | --- | --- |
+| 食べもの・おやつ・飲みもの・くらし | 総務省統計局「家計調査 品目別都道府県庁所在市ランキング（2023年～2025年平均）」 | https://www.stat.go.jp/data/kakei/5.html （Excel：`rank01.xlsx`〜`rank14.xlsx`） |
+| しぜん・まち | 総務省統計局「社会生活統計指標 －都道府県の指標－ 2026」 | https://www.e-stat.go.jp/stat-search/files?page=1&layout=datalist&lid=000001477298 （Excel：A 人口・世帯、B 自然環境、G 文化・スポーツ、H 居住） |
+| （紹介ページ） | 統計でみる都道府県のすがた | https://www.stat.go.jp/data/k-sugata/index.html |
+
+どちらも政府標準利用規約（CC BY 4.0 互換）で公開されていて、出典を書けば加工して使えます。
+
 どの県のどの看板に何の品目を書くかは `src/game/quiz.js` の `FACTS` で決めていて、ここに足せばほかのエリアにも広げられます。
 
 ## 技術スタック
