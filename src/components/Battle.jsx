@@ -299,27 +299,23 @@ export default function Battle({ foe, save, reward, onEnd }) {
   }
 
   // 特別データ攻撃：本物のオープンデータのサイトで調べて答える。時間制限なし。
-  // 正解なら敵に大ダメージ＋味方が回復。外してもダメージは受けない（調べられない人も先へ進めるように）
+  // 正解なら、調べた力で敵を一撃で倒す。外してもダメージは受けない（調べられない人も先へ進めるように）
   async function linksTurn(u, alive, qz) {
     sfx.boss();
     say(`${u.name}の特別データ攻撃！`, true);
     await sleep(700);
-    say('国土交通省「Project LINKS」のデータを調べないと答えられない！');
+    say('国土交通省「Project LINKS」のデータを調べないと答えられない！\n正解すれば、一撃で倒せるぞ！');
     await waitA();
     const choice = await askQuiz(qz);
     if (choice === qz.answer) {
       sfx.select();
-      say('調べて見切った！ 特別データ攻撃を跳ね返した！', true);
-      await sleep(500);
-      const d = Math.max(1, Math.round(u.max * 0.3));
-      u.hp = Math.max(0, u.hp - d);
+      say('調べて見切った！ データの力で反撃だ！', true);
+      await sleep(600);
+      const d = u.hp;
+      u.hp = 0;
       b.blink++;
       sfx.crit();
-      say(`${u.name}に ${d}の ダメージ！`);
-      await sleep(800);
-      for (const t of alive) t.hp = Math.min(t.max, t.hp + Math.round(t.max * 0.3));
-      sfx.heal();
-      say('データの力で、みんなのHPが回復した！');
+      say(`会心の一撃！ ${u.name}に ${d}の ダメージ！`);
       await sleep(900);
     } else {
       sfx.ng();
