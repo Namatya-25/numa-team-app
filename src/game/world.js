@@ -149,14 +149,24 @@ export const signs = []; // { x, y, pref, kind }
 const SIGN_GAP = { 北海道: 5 };
 let gap = 1;
 const nearSign = (x, y) => signs.some((s) => Math.abs(s.x - x) <= gap && Math.abs(s.y - y) <= gap);
+const leftover = [];
 PREF_TILES.forEach((t, i) => {
   const kinds = SIGN_LIST.filter((s) => s.pref === t.name).map((s) => s.kind);
   if (!kinds.length || !NODES[i]) return;
   gap = SIGN_GAP[t.name] || 1;
   // 1回目は道に面したマス、それで足りなければ2回目は道から近い普通のマスに立てる
-  for (const needRoad of [true, false]) placeSigns(i, t.name, kinds, needRoad);
+  for (const needRoad of [true, false]) placeSigns(i, t.name, kinds, needRoad, false);
+  if (kinds.length) leftover.push([i, t.name, kinds]);
 });
-function placeSigns(i, prefName, kinds, needRoad) {
+// 東京・大阪・香川のようにマスの少ない県は、全部の県に立て終わってから、県庁所在地の近くのとなりの県のマスに立てる
+// それでも置けなければ（沖縄のような小さな島）、看板どうしがとなり合ってもよいことにする
+for (const [i, name, kinds] of leftover) {
+  for (const g of [1, 0]) {
+    gap = g;
+    placeSigns(i, name, kinds, false, true);
+  }
+}
+function placeSigns(i, prefName, kinds, needRoad, anyPref) {
   const [nx, ny] = NODES[i];
   const seen = new Set([ny * MW + nx]);
   const queue = [[nx, ny]];
@@ -168,7 +178,7 @@ function placeSigns(i, prefName, kinds, needRoad) {
       const n = grid[y + dy][x + dx];
       return needRoad ? n === T.ROAD : n >= T.GRASS && n <= T.BRIDGE;
     });
-    if (pref[y][x] === i && g >= T.GRASS && g <= T.TOWN && nextTo && !nearSign(x, y)) {
+    if ((anyPref || pref[y][x] === i) && g >= T.GRASS && g <= T.TOWN && nextTo && !nearSign(x, y)) {
       grid[y][x] = T.SIGN;
       signs.push({ x, y, pref: prefName, kind: kinds.shift() });
     }
