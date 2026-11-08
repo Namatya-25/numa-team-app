@@ -126,6 +126,10 @@ button{font:inherit;color:inherit}
 .quiz-q{align-self:stretch}
 .quiz-tag{color:var(--kin);font-size:.85em}
 .quiz-opts{flex:0 0 42%}
+.quiz-q.special{max-height:40vh;overflow:auto}
+.quiz-hint{font-size:.72em;color:#ccc;margin-top:.3em!important;word-break:break-all}
+.quiz-mark{color:#ff5a4f;font-weight:700}
+.quiz-link{display:inline-block;margin-top:.3em;color:var(--kin);font-size:.85em}
 .quiz-opts.wide{flex-basis:55%;grid-template-columns:minmax(0,1fr)}
 .quiz-opts .opt{white-space:normal;line-height:1.35;margin:.1em 0}
 .zukan-group{margin-bottom:.3em}

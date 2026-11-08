@@ -1,6 +1,6 @@
 // 戦闘の初期化（味方と敵のステータスを作る）
 import { REGIONS, HERO, enemyLevel, stats } from '../data/prefectures.js';
-import { quizFor } from './quiz.js';
+import { quizFor, linksQuizFor } from './quiz.js';
 
 const makeUnit = (key, name, p, s, side, lv, skill, skillAll) => ({
   key, name, p, elem: p ? p.elem : null, side, lv,
@@ -39,6 +39,7 @@ export function initBattle(foe, save) {
     blink: 0, shake: 0, // 演出
     bento: 3,
     quiz: quizFor(foe.pid), // 「データ攻撃」の問題（ボスも雑魚敵も、そのエリアの看板から出す）
+    links: foe.wild ? null : linksQuizFor(foe.pid), // ボス戦で1回だけ出る特別データ攻撃（Project LINKS）
     qi: 0, enemyTurns: 0, ask: null,
     fleeTries: 0, // 「逃げる」を選んだ回数（2回目は必ず成功）
     phase: 'intro', // intro → input → exec → (input …) → end

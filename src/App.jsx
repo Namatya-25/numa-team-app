@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel } from './data/prefectures.js';
 import { castles, ownAt, DIRS, START } from './game/world.js';
-import { signLines, signKey, quizFor } from './game/quiz.js';
+import { signLines, signKey, quizFor, linksQuizFor } from './game/quiz.js';
 import { fresh, hasSaved, loadSave, persist, nextOf, rewardFor } from './game/save.js';
 import { KEYMAP, dispatch, held, press, release } from './game/input.js';
 import Field from './components/Field.jsx';
@@ -97,6 +97,10 @@ export default function App() {
         `魅力度 ${REGIONS.length}エリア中 ${p.rank}位。${p.rank <= 2 ? '人気エリアの強敵だ！' : ''}（Lv+${m.lv}）`,
         ...(quizFor(id).length
           ? [`${p.chara}は「データ攻撃」を使ってくる！\nメニューの「図鑑」で${p.name}のデータを予習しておこう。`]
+          : []),
+        ...(linksQuizFor(id)
+          ? ['さらに一度だけ、国のオープンデータ「Project LINKS」を\n自分で調べないと解けない「特別データ攻撃」をしてくる！',
+              '特別データ攻撃に正解すれば、敵の体力を半分まで削れるぞ！']
           : []),
         `${p.chara}（Lv${enemyLevel(p)}・${p.elem}属性）が待ち構えている。\n挑みますか？`,
       ],
@@ -226,7 +230,7 @@ export default function App() {
       )}
 
       <p className="note">
-        図鑑とデータ攻撃のデータは総務省「家計調査」（2023〜2025年平均）と「社会生活統計指標」2026。地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。冒険の書（セーブ）はこのブラウザに自動保存されます。
+        図鑑とデータ攻撃のデータは総務省「家計調査」（2023〜2025年平均）と「社会生活統計指標」2026、特別データ攻撃は国土交通省 Project LINKS「観光統計データ」「貸渡実績報告書データ」。地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。冒険の書（セーブ）はこのブラウザに自動保存されます。
       </p>
     </div>
   );

@@ -258,6 +258,13 @@ export default function Battle({ foe, save, reward, onEnd }) {
 
   // データ攻撃：正解なら跳ね返して敵にダメージ、不正解なら味方全員に大ダメージ
   async function quizTurn(u, alive) {
+    // ボス戦の最初のデータ攻撃は、Project LINKS のサイトで調べる「特別データ攻撃」（1回だけ）
+    if (b.links) {
+      const lq = b.links;
+      b.links = null;
+      await linksTurn(u, alive, lq);
+      return;
+    }
     const qz = b.quiz[b.qi++ % b.quiz.length];
     sfx.skill();
     say(`${u.name}のデータ攻撃！`, true);
@@ -284,6 +291,42 @@ export default function Battle({ foe, save, reward, onEnd }) {
       await sleep(900);
     }
     say(qz.reveal, true);
+    await waitA();
+    if (u.hp <= 0) {
+      sfx.defeat();
+      say(`${u.name}をやっつけた！`, true);
+      await sleep(800);
+    }
+  }
+
+  // 特別データ攻撃：本物のオープンデータのサイトで調べて答える。時間制限なし。
+  // 正解なら、調べた力で敵の体力を半分まで削る。外してもダメージは受けない（調べられない人も先へ進めるように）
+  async function linksTurn(u, alive, qz) {
+    sfx.boss();
+    say(`${u.name}の特別データ攻撃！`, true);
+    await sleep(700);
+    say('国土交通省「Project LINKS」のデータを調べないと答えられない！\n正解すれば、敵の体力を半分まで削れるぞ！');
+    await waitA();
+    const choice = await askQuiz(qz);
+    if (choice === qz.answer) {
+      sfx.select();
+      say('調べて見切った！ データの力で反撃だ！', true);
+      await sleep(600);
+      // 敵の体力を最大HPの半分まで削る。もう半分より少なければ、残りの半分を削る
+      const half = Math.round(u.max / 2);
+      const d = Math.max(1, u.hp > half ? u.hp - half : Math.ceil(u.hp / 2));
+      u.hp = Math.max(0, u.hp - d);
+      b.blink++;
+      sfx.crit();
+      say(`会心の一撃！ ${u.name}に ${d}の ダメージ！`);
+      await sleep(900);
+    } else {
+      sfx.ng();
+      say('ざんねん！ でも調べたことはムダにならない。', true);
+      await sleep(900);
+    }
+    say(qz.reveal, true);
+    say(`出典：${qz.source}`);
     await waitA();
     if (u.hp <= 0) {
       sfx.defeat();
@@ -370,6 +413,10 @@ export default function Battle({ foe, save, reward, onEnd }) {
       else if (k === 'right') b.cur = Math.min(n - 1, b.cur + 1);
       else if (k === 'a') {
         answer(b.ask.choices[b.cur]);
+        return;
+      } else if (k === 'b' && b.ask.link) {
+        // 特別データ攻撃：Bボタン（X キー）でデータのサイトを別のタブで開く
+        window.open(b.ask.link, '_blank', 'noopener,noreferrer');
         return;
       }
       if (b.cur !== before) sfx.cursor();
@@ -473,9 +520,34 @@ export default function Battle({ foe, save, reward, onEnd }) {
       <div className="bottom">
         {b.phase === 'quiz' && b.ask ? (
           <div className="cmdwrap">
-            <div className="win static msg quiz-q" aria-live="polite">
-              <p className="quiz-tag">データ攻撃</p>
+            <div className={'win static msg quiz-q' + (b.ask.special ? ' special' : '')} aria-live="polite">
+              <p className="quiz-tag">{b.ask.special ? '特別データ攻撃（Project LINKS）' : 'データ攻撃'}</p>
               <p>{b.ask.q}</p>
+              {b.ask.special && (
+                <>
+                  <p className="quiz-hint">
+                    ヒント：
+                    {b.ask.hint.split(/«(.+?)»/).map((t, i) =>
+                      i % 2 ? (
+                        <span key={i} className="quiz-mark">
+                          {t}
+                        </span>
+                      ) : (
+                        t
+                      ),
+                    )}
+                  </p>
+                  <a
+                    className="quiz-link"
+                    href={b.ask.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    データのサイトを開く ↗（Bボタン）
+                  </a>
+                </>
+              )}
             </div>
             <div className={'win static cmds quiz-opts' + (b.ask.wide ? ' wide' : '')}>
               {b.ask.choices.map((c, j) => (
