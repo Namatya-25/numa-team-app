@@ -197,7 +197,10 @@ export default function Battle({ foe, save, reward, onEnd }) {
     const alive = allies.filter((a) => a.hp > 0);
     if (!alive.length || u.hp <= 0) return;
     const pick = (a) => a[Math.floor(Math.random() * a.length)];
-    if (u.cd === 0 && Math.random() < 0.5) {
+    // ボスは2ターンに1回「データ攻撃」（クイズ）をしてくる
+    const quizNow = b.quiz.length > 0 && b.enemyTurns++ % 2 === 0;
+    if (quizNow) await quizTurn(u, alive);
+    else if (u.cd === 0 && Math.random() < 0.5) {
       u.cd = 2;
       if (Math.random() < 0.5) {
         sfx.skill();
@@ -231,6 +234,60 @@ export default function Battle({ foe, save, reward, onEnd }) {
         say(`${t.name}は力尽きた。`);
         await sleep(700);
       }
+    }
+  }
+
+  // クイズを出して、選んだ県名が返ってくるまで待つ
+  const askQuiz = (qz) =>
+    new Promise((res) => {
+      b.ask = { ...qz, res };
+      b.phase = 'quiz';
+      b.cur = 0;
+      rerender();
+    });
+
+  function answer(choice) {
+    if (!b.ask) return;
+    const r = b.ask.res;
+    b.ask = null;
+    b.phase = 'exec';
+    rerender();
+    r(choice);
+  }
+
+  // データ攻撃：正解なら跳ね返して敵にダメージ、不正解なら味方全員に大ダメージ
+  async function quizTurn(u, alive) {
+    const qz = b.quiz[b.qi++ % b.quiz.length];
+    sfx.skill();
+    say(`${u.name}のデータ攻撃！`, true);
+    await sleep(800);
+    const choice = await askQuiz(qz);
+    if (choice === qz.answer) {
+      sfx.select();
+      say('見切った！ データ攻撃を跳ね返した！', true);
+      await sleep(500);
+      const d = Math.max(1, Math.round(u.max * 0.15));
+      u.hp = Math.max(0, u.hp - d);
+      b.blink++;
+      sfx.crit();
+      say(`${u.name}に ${d}の ダメージ！`);
+      await sleep(800);
+    } else {
+      sfx.ng();
+      say('ハズレ！ データの力が襲いかかる！', true);
+      await sleep(500);
+      for (const t of alive) {
+        const r = hit(u, t, 1.1 * u.sk);
+        say(`${t.name}に ${r.d}の ダメージ！`);
+      }
+      await sleep(900);
+    }
+    say(qz.reveal, true);
+    await waitA();
+    if (u.hp <= 0) {
+      sfx.defeat();
+      say(`${u.name}をやっつけた！`, true);
+      await sleep(800);
     }
   }
 
@@ -301,6 +358,21 @@ export default function Battle({ foe, save, reward, onEnd }) {
       sfx.cursor();
       rerender();
       r();
+      return;
+    }
+    if (b.phase === 'quiz' && b.ask) {
+      const n = b.ask.choices.length;
+      const before = b.cur;
+      if (k === 'up') b.cur = Math.max(0, b.cur - 2);
+      else if (k === 'down') b.cur = Math.min(n - 1, b.cur + 2);
+      else if (k === 'left') b.cur = Math.max(0, b.cur - 1);
+      else if (k === 'right') b.cur = Math.min(n - 1, b.cur + 1);
+      else if (k === 'a') {
+        answer(b.ask.choices[b.cur]);
+        return;
+      }
+      if (b.cur !== before) sfx.cursor();
+      rerender();
       return;
     }
     if (b.phase !== 'input') return;
@@ -394,7 +466,29 @@ export default function Battle({ foe, save, reward, onEnd }) {
       </div>
 
       <div className="bottom">
-        {b.phase === 'input' && actor ? (
+        {b.phase === 'quiz' && b.ask ? (
+          <div className="cmdwrap">
+            <div className="win static msg quiz-q" aria-live="polite">
+              <p className="quiz-tag">データ攻撃</p>
+              <p>{b.ask.q}</p>
+            </div>
+            <div className="win static cmds quiz-opts">
+              {b.ask.choices.map((c, j) => (
+                <button
+                  key={c}
+                  className={'opt' + (b.cur === j ? ' sel' : '')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    b.cur = j;
+                    answer(c);
+                  }}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : b.phase === 'input' && actor ? (
           <div className="cmdwrap">
             <div className="win static who">{actor.name}</div>
             <div className="win static cmds">

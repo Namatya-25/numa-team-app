@@ -145,6 +145,8 @@ castles.forEach((c) => {
 export const walkable = (x, y) => inb(x, y) && grid[y][x] >= T.GRASS && grid[y][x] <= T.BRIDGE;
 export const castleAt = (x, y) => (inb(x, y) && grid[y][x] === T.CASTLE ? own[y][x] : -1);
 export const ownAt = (x, y) => (inb(x, y) ? own[y][x] : -1);
+/** そのマスの県名（海なら null）。名前は prefectures.js の RAW の書き方 */
+export const prefAt = (x, y) => (inb(x, y) && pref[y][x] >= 0 ? PREF_TILES[pref[y][x]].name : null);
 
 // 城の前（復活地点）。下（正面）→ 左右 → 上の順に、城のまわりで歩けるマスを探す
 const AROUND = [[0, 2], [1, 2], [-1, 0], [-1, 1], [2, 0], [2, 1], [0, -1], [1, -1]];

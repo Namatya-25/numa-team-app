@@ -2,7 +2,8 @@
 // ありがとう
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel } from './data/prefectures.js';
-import { castles, ownAt, DIRS, START } from './game/world.js';
+import { castles, ownAt, prefAt, DIRS, START } from './game/world.js';
+import { hasFacts, learnLines, quizFor } from './game/quiz.js';
 import { fresh, hasSaved, loadSave, persist, nextOf, rewardFor } from './game/save.js';
 import { KEYMAP, dispatch, held, press, release } from './game/input.js';
 import Field from './components/Field.jsx';
@@ -26,6 +27,11 @@ export default function App() {
   const [battle, setBattle] = useState(null);
   const [area, setArea] = useState(null);
   const lastArea = useRef(ownAt(save.pos.x, save.pos.y));
+  // 図鑑に記録した県。歩くたびに見るので ref にも持つ（開発者用のリセットにも追従する）
+  const learnedRef = useRef(save.learned || []);
+  useEffect(() => {
+    learnedRef.current = save.learned || [];
+  }, [save.learned]);
   const [narrow, setNarrow] = useState(() => window.innerWidth < 600);
 
   const vw = narrow ? 11 : 15; // 画面に映るタイル数
@@ -94,6 +100,9 @@ export default function App() {
         `地形データ：最高峰 ${p.peak.toLocaleString()}m・森林率 ${p.forest}%\n→ 防御×${m.def.toFixed(2)}　素早さ×${m.spd.toFixed(2)}`,
         `名物「${p.food}」の力（グルメ指数 ${p.foodIdx}）\n→ HP×${m.hp.toFixed(2)}　必殺×${m.sk.toFixed(2)}`,
         `魅力度 ${REGIONS.length}エリア中 ${p.rank}位。${p.rank <= 2 ? '人気エリアの強敵だ！' : ''}（Lv+${m.lv}）`,
+        ...(quizFor(id).length
+          ? [`${p.chara}は「データ攻撃」を使ってくる！\nメニューの「図鑑」で${p.name}のデータを予習しておこう。`]
+          : []),
         `${p.chara}（Lv${enemyLevel(p)}・${p.elem}属性）が待ち構えている。\n挑みますか？`,
       ],
       ['はい', 'いいえ'],
@@ -139,10 +148,18 @@ export default function App() {
       lastArea.current = o;
       setArea({ name: REGIONS[o].name, n: Date.now() });
     }
+    // 初めて入った県なら、その県のデータを図鑑に記録して読み上げる
+    const pf = prefAt(x, y);
+    if (pf && hasFacts(pf) && !learnedRef.current.includes(pf)) {
+      learnedRef.current = [...learnedRef.current, pf];
+      setSave((s) => ({ ...s, learned: [...(s.learned || []), pf] }));
+      talk(learnLines(pf));
+    }
   }
 
   function newGame() {
-    const f = fresh();
+    const f = { ...fresh(), learned: ['北海道'] };
+    learnedRef.current = f.learned;
     setSave(f);
     persist(f);
     hadSave.current = true;
@@ -153,6 +170,8 @@ export default function App() {
       '全国のご当地キャラたちが自分の土地を守るため、\n一斉に乱を起こした！',
       `旅人${HERO}よ。本土の7地方と離島、${REGIONS.length}の城を制覇し、\n日本のすみずみまで旅するのだ！`,
       '矢印キーで移動。Zキーで調べる・メニュー。\n城にぶつかると話しかけられる。',
+      ...learnLines('北海道'),
+      '初めての県に入ると、データが図鑑に記録される。\nボスはそのデータでクイズを出してくるぞ！',
     ]);
   }
 
@@ -210,7 +229,7 @@ export default function App() {
       )}
 
       <p className="note">
-        地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。冒険の書（セーブ）はこのブラウザに自動保存されます。
+        図鑑とデータ攻撃のデータは総務省「家計調査」（2023〜2025年平均）。地域データ（最高峰・森林率・名物・魅力度順位）は参考値のサンプルです。登場キャラクターはすべてオリジナル。冒険の書（セーブ）はこのブラウザに自動保存されます。
       </p>
     </div>
   );

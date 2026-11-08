@@ -1,13 +1,37 @@
-// フィールドのメニュー（つよさ・なかま・ちず・データ）
+// フィールドのメニュー（つよさ・なかま・ちず・図鑑・データ）
 import { useEffect, useRef, useState } from 'react';
 import { REGIONS, HERO, mods, enemyLevel, stats, need } from '../data/prefectures.js';
+import { KAKEI_SOURCE } from '../data/kakei.js';
 import { MW, MH, T, grid, own, castles, ownAt } from '../game/world.js';
 import { INSET_FRAMES } from '../data/japanMap.js';
 import { GRASS_COL } from '../game/render.js';
 import { nextOf } from '../game/save.js';
+import { zukanPages, ZUKAN_TOTAL } from '../game/quiz.js';
 import { useInput } from '../game/input.js';
 
-const ROOT = ['強さ', '仲間', '地図', 'データ', '閉じる'];
+const ROOT = ['強さ', '仲間', '地図', '図鑑', 'データ', '閉じる'];
+
+// データ図鑑：記録した県のデータを1県ずつ見る（左右でページ送り）
+function Zukan({ pages, page }) {
+  if (!pages.length) return <p style={{ margin: 0 }}>まだ記録がない。初めての県に入ると、その県のデータが記録される。</p>;
+  const pg = pages[Math.min(page, pages.length - 1)];
+  return (
+    <div className="zukan">
+      <h3>
+        データ図鑑　{pg.pref}（{pages.length}/{ZUKAN_TOTAL}県）
+      </h3>
+      <p style={{ margin: '0 0 .3em' }}>1世帯が1年に使うお金（県庁所在地）</p>
+      <ul>
+        {pg.lines.map((l) => (
+          <li key={l}>・{l}</li>
+        ))}
+      </ul>
+      <p className="hint">
+        {pages.length > 1 ? '◀ ▶ でページ送り　' : ''}出典：{KAKEI_SOURCE}
+      </p>
+    </div>
+  );
+}
 
 function MiniMap({ save }) {
   const ref = useRef(null);
@@ -67,6 +91,8 @@ export default function Menu({ save, setSave, onClose }) {
   const [partyCur, setPartyCur] = useState(0);
   const [hint, setHint] = useState('');
   const mates = [...save.cleared].sort((a, b) => a - b);
+  const zPages = zukanPages(save.learned || []);
+  const [zPage, setZPage] = useState(0);
 
   function toggle(id) {
     if (save.party.includes(id)) {
@@ -100,7 +126,9 @@ export default function Menu({ save, setSave, onClose }) {
       else if (k === 'down' || k === 'right') setPartyCur((v) => Math.min(mates.length - 1, v + 1));
       else if (k === 'a') toggle(mates[partyCur]);
       else if (k === 'b') setView(null);
-    } else if (k === 'a' || k === 'b') setView(null);
+    } else if (view === '図鑑' && (k === 'left' || k === 'up')) setZPage((v) => Math.max(0, v - 1));
+    else if (view === '図鑑' && (k === 'right' || k === 'down')) setZPage((v) => Math.min(zPages.length - 1, v + 1));
+    else if (k === 'a' || k === 'b') setView(null);
   });
 
   const here = ownAt(save.pos.x, save.pos.y);
@@ -169,6 +197,8 @@ export default function Menu({ save, setSave, onClose }) {
         </div>
       </div>
     );
+  } else if (view === '図鑑') {
+    body = <Zukan pages={zPages} page={zPage} />;
   } else if (view === 'データ') {
     body = <DataView p={dataPref} />;
   }
